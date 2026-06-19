@@ -1,1 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notifuse — All your alerts. One place.</title>
+  <meta name="description" content="Stop checking multiple apps. Notifuse is a smart personal alert platform for gold prices, currency rates, weather, sports, crypto, and more — all in one intelligent hub." />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%232563eb'/><path d='M50 22c-11 0-20 9-20 20v8c0 3-1 6-3 8l-4 5h54l-4-5c-2-2-3-5-3-8v-8c0-11-9-20-20-20z' fill='white'/><circle cx='50' cy='78' r='7' fill='white'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#" class="logo" aria-label="Notifuse home">
+        <span class="logo-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect width="28" height="28" rx="8" fill="currentColor"/>
+            <path d="M14 6c-3.3 0-6 2.7-6 6v2.2c0 .9-.3 1.8-.9 2.5l-1.2 1.5h16.2l-1.2-1.5c-.6-.7-.9-1.6-.9-2.5V12c0-3.3-2.7-6-6-6z" fill="white"/>
+            <circle cx="14" cy="22" r="2.2" fill="white"/>
+          </svg>
+        </span>
+        <span class="logo-text">Notifuse</span>
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#categories">Categories</a>
+      </nav>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
 
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-bg" aria-hidden="true">
+        <div class="hero-orb hero-orb-1"></div>
+        <div class="hero-orb hero-orb-2"></div>
+      </div>
+      <div class="container hero-grid">
+        <div class="hero-content reveal">
+          <span class="badge">
+            <span class="badge-dot"></span>
+            Early Access Coming Soon
+          </span>
+          <p class="hero-brand">Notifuse</p>
+          <h1>All your alerts.<br />One place.</h1>
+          <p class="hero-sub">
+            Stop checking multiple apps. Track gold prices, currency rates, weather alerts, sports updates, breaking news, and more — all from one intelligent alert hub.
+          </p>
+          <p class="hero-concept">Don't keep checking. We'll tell you when it matters.</p>
+          <div class="hero-actions">
+            <a href="#roadmap" class="btn btn-primary">View roadmap</a>
+            <a href="#how-it-works" class="btn btn-ghost">How it works</a>
+          </div>
+        </div>
+
+        <div class="hero-visual reveal reveal-delay" aria-hidden="true">
+          <div class="phone-glow"></div>
+          <div class="phone">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="phone-status">
+                <span>9:41</span>
+                <span class="phone-signal">
+                  <i></i><i></i><i></i>
+                </span>
+              </div>
+              <div class="phone-header">
+                <span class="phone-greeting">Today</span>
+                <span class="phone-title">Your alerts</span>
+                <span class="phone-count">6 active</span>
+              </div>
+              <div class="phone-alerts">
+                <div class="alert-card alert-gold">
+                  <div class="alert-icon">🥇</div>
+                  <div class="alert-body">
+                    <strong>Gold</strong>
+                    <span>Crossed $2,150/oz</span>
+                  </div>
+                  <time>2m</time>
+                </div>
+                <div class="alert-card alert-currency">
+                  <div class="alert-icon">💱</div>
+                  <div class="alert-body">
+                    <strong>Currency</strong>
+                    <span>EUR/USD hit your target</span>
+                  </div>
+                  <time>14m</time>
+                </div>
+                <div class="alert-card alert-crypto">
+                  <div class="alert-icon">₿</div>
+                  <div class="alert-body">
+                    <strong>Crypto</strong>
+                    <span>BTC up 5% in 24h</span>
+                  </div>
+                  <time>1h</time>
+                </div>
+                <div class="alert-card alert-football">
+                  <div class="alert-icon">⚽</div>
+                  <div class="alert-body">
+                    <strong>Football</strong>
+                    <span>Your team scored!</span>
+                  </div>
+                  <time>2h</time>
+                </div>
+                <div class="alert-card alert-weather">
+                  <div class="alert-icon">🌧️</div>
+                  <div class="alert-body">
+                    <strong>Weather</strong>
+                    <span>Heavy rain at 4 PM</span>
+                  </div>
+                  <time>3h</time>
+                </div>
+              </div>
+              <div class="phone-tabs">
+                <span class="active">Alerts</span>
+                <span>Categories</span>
+                <span>Settings</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-label">Features</span>
+          <h2>Built for clarity, not clutter</h2>
+          <p>One intelligent platform that replaces the need to juggle dozens of apps.</p>
+        </div>
+        <div class="features-grid">
+          <article class="feature-card reveal">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.8l-4.8 2.5.9-5.4-3.9-3.8 5.4-.8L12 2z"/></svg>
+            </div>
+            <h3>Personalized Alerts</h3>
+            <p>Receive notifications only for topics you choose.</p>
+          </article>
+          <article class="feature-card reveal reveal-delay">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            </div>
+            <h3>Multiple Categories</h3>
+            <p>Track finance, weather, sports, travel, news, and more.</p>
+          </article>
+          <article class="feature-card reveal reveal-delay-2">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            </div>
+            <h3>Smart Notifications</h3>
+            <p>Reduce noise and focus on what matters.</p>
+          </article>
+          <article class="feature-card reveal reveal-delay-3">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            </div>
+            <h3>One Unified Hub</h3>
+            <p>No need to install multiple apps.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section section-alt" id="how-it-works">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-label">How it works</span>
+          <h2>Three steps to staying informed</h2>
+          <p>Set up in minutes. Stay informed for life.</p>
+        </div>
+        <ol class="steps">
+          <li class="step reveal">
+            <div class="step-connector" aria-hidden="true"></div>
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h3>Choose what matters to you</h3>
+              <p>Pick from categories like gold, currency, weather, sports, and news.</p>
+            </div>
+          </li>
+          <li class="step reveal reveal-delay">
+            <div class="step-connector" aria-hidden="true"></div>
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h3>Set custom alert conditions</h3>
+              <p>Define price targets, weather thresholds, or event triggers that matter to you.</p>
+            </div>
+          </li>
+          <li class="step reveal reveal-delay-2">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h3>Receive instant notifications</h3>
+              <p>Get notified the moment something important happens — no checking required.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Roadmap -->
+    <section class="section" id="roadmap">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-label">Roadmap</span>
+          <h2>Where we're headed</h2>
+          <p>Starting focused. Scaling globally.</p>
+        </div>
+        <div class="roadmap">
+          <div class="roadmap-phase reveal">
+            <div class="roadmap-marker roadmap-marker-live">
+              <span class="roadmap-dot"></span>
+            </div>
+            <div class="roadmap-card roadmap-card-live">
+              <span class="roadmap-tag">Available at Launch</span>
+              <ul>
+                <li>Currency Alerts</li>
+                <li>Gold Alerts</li>
+                <li>Weather Alerts</li>
+              </ul>
+            </div>
+          </div>
+          <div class="roadmap-phase reveal reveal-delay">
+            <div class="roadmap-marker">
+              <span class="roadmap-dot"></span>
+            </div>
+            <div class="roadmap-card">
+              <span class="roadmap-tag">Coming Next</span>
+              <ul>
+                <li>Football Alerts</li>
+                <li>Crypto Alerts</li>
+                <li>Stock Alerts</li>
+                <li>Flight Price Alerts</li>
+                <li>Breaking News</li>
+                <li>Shopping Price Alerts</li>
+              </ul>
+            </div>
+          </div>
+          <div class="roadmap-phase reveal reveal-delay-2">
+            <div class="roadmap-marker roadmap-marker-future">
+              <span class="roadmap-dot"></span>
+            </div>
+            <div class="roadmap-card roadmap-card-future">
+              <span class="roadmap-tag">Future Vision</span>
+              <ul>
+                <li>AI-powered alert recommendations</li>
+                <li>Personalized importance ranking</li>
+                <li>Global event alerts</li>
+                <li>Cross-category intelligence</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="section section-alt" id="categories">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-label">Categories</span>
+          <h2>Everything you care about</h2>
+          <p>One app. Every alert that matters.</p>
+        </div>
+        <div class="categories-grid">
+          <article class="category-card reveal">
+            <div class="category-icon-wrap cat-gold">🥇</div>
+            <h4>Gold</h4>
+            <p>Price movements and threshold alerts for precious metals.</p>
+          </article>
+          <article class="category-card reveal reveal-delay">
+            <div class="category-icon-wrap cat-currency">💱</div>
+            <h4>Currency</h4>
+            <p>Exchange rate changes when your target is reached.</p>
+          </article>
+          <article class="category-card reveal reveal-delay">
+            <div class="category-icon-wrap cat-weather">🌤️</div>
+            <h4>Weather</h4>
+            <p>Rain, storms, and temperature shifts in your area.</p>
+          </article>
+          <article class="category-card reveal reveal-delay-2">
+            <div class="category-icon-wrap cat-football">⚽</div>
+            <h4>Football</h4>
+            <p>Goals, results, and updates for teams you follow.</p>
+          </article>
+          <article class="category-card reveal reveal-delay-2">
+            <div class="category-icon-wrap cat-crypto">₿</div>
+            <h4>Crypto</h4>
+            <p>Market moves and milestones for your watchlist.</p>
+          </article>
+          <article class="category-card reveal reveal-delay-2">
+            <div class="category-icon-wrap cat-stocks">📈</div>
+            <h4>Stocks</h4>
+            <p>Track equities and indices that matter to you.</p>
+          </article>
+          <article class="category-card reveal reveal-delay-3">
+            <div class="category-icon-wrap cat-flights">✈️</div>
+            <h4>Flights</h4>
+            <p>Get notified when fares drop on routes you watch.</p>
+          </article>
+          <article class="category-card reveal reveal-delay-3">
+            <div class="category-icon-wrap cat-news">📰</div>
+            <h4>News</h4>
+            <p>Breaking headlines on topics you care about.</p>
+          </article>
+          <article class="category-card reveal reveal-delay-3">
+            <div class="category-icon-wrap cat-shopping">🛍️</div>
+            <h4>Shopping</h4>
+            <p>Price drop alerts on products you're watching.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Vision -->
+    <section class="section vision" id="vision">
+      <div class="container">
+        <div class="vision-inner reveal">
+          <span class="section-label">Our vision</span>
+          <h2>The future of staying informed</h2>
+          <p>Most people install multiple apps and repeatedly check them throughout the day. Notifuse changes that. Simply choose what matters to you and get notified when it's important.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+      <div class="container cta-inner reveal">
+        <span class="badge badge-light">
+          <span class="badge-dot badge-dot-light"></span>
+          Early Access Coming Soon
+        </span>
+        <h2>Be first to know.</h2>
+        <p>Notifuse is launching soon on iOS and Android. Reach out to learn about early access.</p>
+        <a href="mailto:hello@notifuse.net" class="btn btn-white">hello@notifuse.net</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="#" class="logo logo-footer">
+          <span class="logo-icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+              <rect width="28" height="28" rx="8" fill="currentColor"/>
+              <path d="M14 6c-3.3 0-6 2.7-6 6v2.2c0 .9-.3 1.8-.9 2.5l-1.2 1.5h16.2l-1.2-1.5c-.6-.7-.9-1.6-.9-2.5V12c0-3.3-2.7-6-6-6z" fill="white"/>
+              <circle cx="14" cy="22" r="2.2" fill="white"/>
+            </svg>
+          </span>
+          <span class="logo-text">Notifuse</span>
+        </a>
+        <p class="footer-tagline">All your alerts. One place.</p>
+      </div>
+      <div class="footer-col">
+        <span class="footer-label">Email</span>
+        <a href="mailto:hello@notifuse.net">hello@notifuse.net</a>
+      </div>
+      <div class="footer-col">
+        <span class="footer-label">Links</span>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="mailto:hello@notifuse.net">Contact</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container">
+        <p>&copy; Notifuse. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
