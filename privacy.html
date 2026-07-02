@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Privacy Policy — Notifuse</title>
+  <link rel="canonical" href="https://notifuse.net/privacy.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -15,36 +16,118 @@
     .legal-page h2 { font-size: 1.125rem; font-weight: 600; margin: 2rem 0 0.75rem; }
     .legal-page p, .legal-page li { color: var(--text-muted); font-size: 0.9375rem; line-height: 1.7; margin-bottom: 0.75rem; }
     .legal-page ul { padding-left: 1.25rem; margin-bottom: 1rem; }
+    .legal-page a { color: var(--accent); }
     .legal-back { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; font-weight: 500; color: var(--accent); margin-bottom: 2rem; }
   </style>
 </head>
 <body>
   <div class="container legal-page">
-    <a href="index.html" class="legal-back">&larr; Back to home</a>
+    <a href="https://notifuse.net/" class="legal-back">&larr; Back to home</a>
     <h1>Privacy Policy</h1>
     <p class="updated">Last updated: June 19, 2026</p>
 
-    <p>This Privacy Policy describes how Notifuse ("we", "our", or "us") collects, uses, and protects your information when you use our mobile application and website.</p>
+    <p>This Privacy Policy explains how Notifuse ("we", "our", or "us") collects, uses, and protects your information when you use the Notifuse mobile application and our website at <a href="https://notifuse.net/">notifuse.net</a>.</p>
 
     <h2>Information we collect</h2>
-    <p>We may collect information you provide directly, such as your email address, alert preferences, and notification settings. We may also collect device information and usage data to improve our services.</p>
-
-    <h2>How we use your information</h2>
+    <p>Depending on how you use Notifuse, we may collect the following information:</p>
     <ul>
-      <li>To deliver personalized alerts based on your selected categories</li>
-      <li>To improve and optimize the Notifuse experience</li>
-      <li>To communicate with you about product updates</li>
-      <li>To ensure the security and integrity of our platform</li>
+      <li><strong>Account information.</strong> When you sign in, we collect your email address through Supabase authentication.</li>
+      <li><strong>Alerts and preferences.</strong> Alerts you create, notification settings, language preferences, and related app settings are stored in our Supabase database so we can deliver the service across your devices.</li>
+      <li><strong>Device information.</strong> We may collect basic device details such as platform (iOS or Android), app version, and a push notification token when you enable notifications.</li>
+      <li><strong>Subscription status.</strong> If you subscribe to Notifuse Pro, purchase and entitlement status is managed through RevenueCat and associated with your account.</li>
+      <li><strong>Market and weather data.</strong> Notifuse displays currency, gold, crypto, weather, and other market information. This content is fetched to show current values and power your alerts. We do not sell this data.</li>
     </ul>
 
+    <h2>Authentication</h2>
+    <p>Notifuse uses email-based sign-in provided by <a href="https://supabase.com/privacy" rel="noopener noreferrer" target="_blank">Supabase</a>. We use your email address to create and secure your account. We do not use your email address for unrelated marketing without your consent.</p>
+
+    <h2>Location permission</h2>
+    <p>The weather feature may request access to your device's approximate location if you choose to use it. Location access is optional.</p>
+    <ul>
+      <li>We use location only to provide local weather information when you request it.</li>
+      <li>We do not use location for advertising, background tracking, or unrelated purposes.</li>
+      <li>Location is used only for that request and is not stored after the request.</li>
+      <li>You can deny location permission and still use Notifuse. Weather can use a city you select instead.</li>
+      <li>You can change or revoke location permission at any time in your device settings.</li>
+    </ul>
+
+    <h2>Push notifications</h2>
+    <p>Notifuse can send push notifications when your alerts are triggered. Push delivery uses Expo notifications together with platform services such as Apple Push Notification service (APNs) on iOS and Firebase Cloud Messaging (FCM) on Android.</p>
+    <ul>
+      <li>Notifications are sent only if you grant permission on your device.</li>
+      <li>We store a push token linked to your account and device so alerts can reach you.</li>
+      <li>You can turn off notifications at any time in your device settings.</li>
+    </ul>
+
+    <h2>Subscriptions</h2>
+    <p>Notifuse offers optional paid subscriptions (Notifuse Pro). Subscription management is handled by <a href="https://www.revenuecat.com/privacy" rel="noopener noreferrer" target="_blank">RevenueCat</a>.</p>
+    <ul>
+      <li>RevenueCat verifies purchases and helps restore subscriptions across supported platforms.</li>
+      <li>Purchase and entitlement status is associated with your Notifuse account.</li>
+      <li>RevenueCat does not process payment cards. It receives transaction information from Apple and Google to confirm your subscription status.</li>
+    </ul>
+
+    <h2>Payment processing</h2>
+    <p>All subscription payments are processed by the app store on your device:</p>
+    <ul>
+      <li><strong>Apple In-App Purchases</strong> on iOS</li>
+      <li><strong>Google Play Billing</strong> on Android</li>
+    </ul>
+    <p>Notifuse never receives or stores your payment card information. Payment details are handled solely by Apple or Google under their respective privacy policies.</p>
+
+    <h2>How we use your information</h2>
+    <p>We use the information we collect to:</p>
+    <ul>
+      <li>Provide, operate, and maintain the Notifuse app</li>
+      <li>Authenticate your account and keep it secure</li>
+      <li>Store and evaluate the alerts you create</li>
+      <li>Deliver push notifications when your alert conditions are met</li>
+      <li>Display market, currency, gold, crypto, weather, and related data</li>
+      <li>Manage subscriptions and provide Pro features to paying subscribers</li>
+      <li>Improve reliability, performance, and security</li>
+      <li>Respond to support requests</li>
+    </ul>
+
+    <h2>Advertising</h2>
+    <p>Notifuse does not contain advertising. We do not use your personal information to serve ads.</p>
+
     <h2>Data sharing</h2>
-    <p>We do not sell your personal information. We may share data with trusted service providers who assist in operating our app, subject to confidentiality agreements.</p>
+    <p>We do not sell your personal information.</p>
+    <p>We share information only with service providers that help us operate Notifuse, and only as needed to provide the service. These may include:</p>
+    <ul>
+      <li><strong>Supabase</strong> — authentication, database, and backend services</li>
+      <li><strong>RevenueCat</strong> — subscription verification and entitlement management</li>
+      <li><strong>Apple and Google</strong> — in-app purchase and billing processing</li>
+      <li><strong>Expo, Apple (APNs), and Google (FCM)</strong> — push notification delivery</li>
+    </ul>
+    <p>These providers process data under their own privacy policies and are permitted to use your information only to perform services on our behalf, except as required by law.</p>
+    <p>We may also disclose information if required by law, regulation, legal process, or to protect the rights, safety, and security of Notifuse and our users.</p>
+
+    <h2>Data retention</h2>
+    <p>We retain your account data and alerts for as long as your account is active and as needed to provide the service. When you delete your account, we delete or anonymize associated personal data in accordance with our deletion process, except where retention is required by law.</p>
+
+    <h2>Account deletion</h2>
+    <p>You can delete your Notifuse account at any time from <strong>Settings</strong> in the app. Account deletion is permanent and removes your account along with associated data such as alerts and preferences, subject to any legal retention requirements.</p>
+    <p>If you need help deleting your account, contact us at <a href="mailto:hello@notifuse.net">hello@notifuse.net</a>.</p>
 
     <h2>Your rights</h2>
-    <p>You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:hello@notifuse.net" style="color: var(--accent);">hello@notifuse.net</a>.</p>
+    <p>Depending on where you live, you may have the right to access, correct, or delete your personal data, or to object to or restrict certain processing.</p>
+    <p>You can delete your account directly in the app. For other requests, contact us at <a href="mailto:hello@notifuse.net">hello@notifuse.net</a>. We will respond within a reasonable time.</p>
+
+    <h2>Children's privacy</h2>
+    <p>Notifuse is not directed at children under 13, and we do not knowingly collect personal information from children under 13. If you believe a child has provided us with personal information, please contact us and we will take steps to delete it.</p>
+
+    <h2>Security</h2>
+    <p>We use reasonable technical and organizational measures to protect your information. No method of transmission or storage is completely secure, but we work to safeguard data using industry-standard practices, including encrypted connections to our services.</p>
+
+    <h2>International users</h2>
+    <p>Notifuse may process and store information in countries other than your own, including where our service providers operate. By using the app, you understand that your information may be transferred to and processed in those locations.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>We may update this Privacy Policy from time to time. When we do, we will revise the "Last updated" date at the top of this page. Continued use of Notifuse after changes become effective means you accept the updated policy.</p>
 
     <h2>Contact</h2>
-    <p>If you have questions about this Privacy Policy, please contact us at <a href="mailto:hello@notifuse.net" style="color: var(--accent);">hello@notifuse.net</a>.</p>
+    <p>If you have questions about this Privacy Policy or our data practices, contact us at <a href="mailto:hello@notifuse.net">hello@notifuse.net</a>.</p>
   </div>
 </body>
 </html>
