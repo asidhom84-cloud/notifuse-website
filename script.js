@@ -3,6 +3,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const nav = document.querySelector('.nav');
 
   if (toggle && nav) {
+    const closeMenu = () => {
+      nav.classList.remove('open');
+      toggle.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-label', 'Open menu');
+    };
+
     toggle.addEventListener('click', () => {
       const isOpen = nav.classList.toggle('open');
       toggle.classList.toggle('open', isOpen);
@@ -11,12 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     nav.querySelectorAll('a').forEach((link) => {
-      link.addEventListener('click', () => {
-        nav.classList.remove('open');
-        toggle.classList.remove('open');
-        toggle.setAttribute('aria-expanded', 'false');
-        toggle.setAttribute('aria-label', 'Open menu');
-      });
+      link.addEventListener('click', closeMenu);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeMenu();
     });
   }
 
