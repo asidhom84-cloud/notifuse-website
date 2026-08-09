@@ -6,25 +6,72 @@
   <title>NotiBus Terms of Service — Noti Family</title>
   <link rel="canonical" href="https://notifuse.net/notibus/terms/" />
   <meta name="description" content="Terms of Service for the NotiBus mobile app." />
-  <meta name="theme-color" content="#070b18" />
+  <meta name="theme-color" content="#ffffff" />
   <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css" />
-  <link rel="stylesheet" href="/hub.css" />
   <style>
-    .legal-page { padding: 4rem 0 5rem; max-width: 42rem; margin: 0 auto; color: #e2e8f0; }
-    .legal-page h1 { font-family: Sora, Manrope, sans-serif; font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
-    .legal-page .updated { color: rgba(226,232,240,0.55); font-size: 0.875rem; margin-bottom: 2rem; }
-    .legal-page h2 { font-size: 1.125rem; font-weight: 600; margin: 2rem 0 0.75rem; }
-    .legal-page p, .legal-page li { color: rgba(226,232,240,0.72); font-size: 0.9375rem; line-height: 1.7; margin-bottom: 0.75rem; }
-    .legal-page ul { padding-left: 1.25rem; margin-bottom: 1rem; }
-    .legal-page a { color: #7dd3fc; }
-    .legal-back { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; font-weight: 500; color: #7dd3fc; margin-bottom: 2rem; }
+    :root {
+      --ink: #0f172a;
+      --ink-soft: #1e293b;
+      --muted: #475569;
+      --accent: #2563eb;
+      --bg: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Manrope, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); }
+    .container { width: 100%; max-width: 42rem; margin: 0 auto; padding: 0 1.5rem; }
+    .legal-page { padding: 3rem 0 5rem; }
+    .legal-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      margin-bottom: 1.75rem;
+    }
+    .legal-page h1 {
+      font-family: Sora, Manrope, sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0 0 0.5rem;
+      line-height: 1.2;
+    }
+    .legal-page .updated {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin: 0 0 2rem;
+    }
+    .legal-page h2 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--ink-soft);
+      margin: 2rem 0 0.75rem;
+    }
+    .legal-page p,
+    .legal-page li {
+      color: var(--muted);
+      font-size: 0.975rem;
+      line-height: 1.75;
+      margin: 0 0 0.85rem;
+    }
+    .legal-page strong { color: var(--ink-soft); font-weight: 700; }
+    .legal-page ul { padding-left: 1.25rem; margin: 0 0 1rem; }
   </style>
 </head>
-<body class="page-hub">
+<body>
   <div class="container legal-page">
     <a href="/notibus/" class="legal-back">&larr; NotiBus</a>
     <h1>NotiBus Terms of Service</h1>
