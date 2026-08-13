@@ -29,11 +29,6 @@
   --max: 1120px;
   --header-h: 72px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  /* Compatibility aliases for older standalone legal pages */
-  --text: var(--ink);
-  --text-muted: var(--muted);
-  --bg-alt: var(--bg-soft);
-  --border: var(--line);
 }
 
 html {
@@ -845,7 +840,7 @@ a.app-card:active {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 880px) {
   .nav-toggle {
     display: inline-flex;
   }

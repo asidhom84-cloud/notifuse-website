@@ -70,7 +70,7 @@
   background: var(--hub-ink);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 880px) {
   .page-hub .nav {
     background: rgba(11, 18, 36, 0.96);
     border-color: var(--hub-line);
@@ -313,7 +313,8 @@
   max-width: 28rem;
 }
 
-.hub-soon-badge {
+.hub-soon-badge,
+.hub-status-badge {
   display: inline-flex;
   align-items: center;
   padding: 0.28rem 0.7rem;
@@ -324,6 +325,184 @@
   color: #e2e8f0;
   background: rgba(148, 163, 184, 0.16);
   border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.hub-status-live {
+  color: #d1fae5;
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(52, 211, 153, 0.28);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Company homepage */
+.page-company .company-hero {
+  position: relative;
+  isolation: isolate;
+  padding: 5.75rem 0 2.5rem;
+  overflow: hidden;
+}
+
+.page-company .company-hero-inner {
+  position: relative;
+  max-width: 42rem;
+}
+
+.page-company .company-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.15rem, 5.4vw, 3.6rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  margin-bottom: 1.15rem;
+  color: #fff;
+  text-wrap: balance;
+}
+
+.page-company .company-lead {
+  max-width: 36rem;
+  color: var(--hub-muted);
+  font-size: 1.125rem;
+}
+
+.page-company .company-values {
+  padding: 0.5rem 0 2.5rem;
+}
+
+.page-company .company-value-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.page-company .company-value {
+  padding: 1.35rem 1.4rem;
+  border-radius: 22px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid var(--hub-glass-border);
+}
+
+.page-company .company-value h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: #fff;
+  margin-bottom: 0.45rem;
+}
+
+.page-company .company-value p {
+  color: var(--hub-muted);
+  font-size: 0.95rem;
+}
+
+.page-company .company-apps-head {
+  margin-bottom: 1.75rem;
+}
+
+.page-company .company-apps-head h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+  color: #fff;
+  letter-spacing: -0.03em;
+}
+
+.page-company .company-apps-head p {
+  color: var(--hub-muted);
+  max-width: 34rem;
+}
+
+.hub-topic-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+  list-style: none;
+}
+
+.hub-topic-list li {
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  background: rgba(139, 92, 246, 0.14);
+  border: 1px solid rgba(167, 139, 250, 0.22);
+}
+
+.hub-card-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9rem;
+}
+
+.hub-card-stores {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.hub-card-stores img {
+  height: 40px;
+  width: auto;
+}
+
+.hub-card-stores .badge-apple {
+  height: 32px;
+}
+
+.hub-card-btn-secondary {
+  background: rgba(148, 163, 184, 0.12);
+  color: #e2e8f0;
+  box-shadow: none;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.hub-footer-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 0.8fr 0.8fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.hub-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.hub-footer-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hub-muted);
+  margin-bottom: 0.35rem;
+}
+
+.hub-footer-col a {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.hub-footer-col a:hover {
+  color: #fff;
+}
+
+.page-product .product-status {
+  display: inline-flex;
+  margin-bottom: 0.75rem;
 }
 
 .hub-card-btn {
@@ -347,9 +526,9 @@
 }
 
 .hub-card-soon {
-  opacity: 0.72;
-  filter: saturate(0.92);
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.45), rgba(15, 23, 42, 0.7));
+  opacity: 1;
+  filter: none;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.55), rgba(15, 23, 42, 0.82));
 }
 
 .hub-card-btn-locked {
@@ -454,11 +633,16 @@
 
   .hub-app-grid {
     grid-template-columns: 1fr;
-    max-width: 520px;
+    max-width: 560px;
     margin: 0 auto;
   }
 
-  .hub-footer-inner {
+  .page-company .company-value-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hub-footer-inner,
+  .hub-footer-grid {
     grid-template-columns: 1fr;
   }
 
@@ -477,7 +661,7 @@
   }
 }
 
-/* ─── Product page (/notifuse) dark polish ─── */
+/* ─── Product page (/notisignal) dark polish ─── */
 
 .page-product .product-hero {
   position: relative;
