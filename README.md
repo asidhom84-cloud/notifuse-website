@@ -20,6 +20,7 @@ GitHub Pages allows only **one** custom domain per site. Replacing `CNAME` on `m
 | `/smokelater/` | SmokeLater product/legal landing |
 | `/smokelater/privacy` | SmokeLater Privacy Policy |
 | `/smokelater/terms` | SmokeLater Terms of Use |
+| `/network-pulse/privacy/` | Network Pulse: NOC Privacy Policy |
 | `/notifuse/` | HTML fallback redirect to `/notisignal/` |
 | `/privacy.html` | NotiSignal Privacy Policy |
 | `/terms.html` | NotiSignal Terms of Use |
