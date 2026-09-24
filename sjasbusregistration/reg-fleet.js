@@ -1,10 +1,10 @@
 // SJAS Bus Registration — admin: fleet, bus assignment, routes, settings, driver sheets.
 
-import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=10';
-import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=10';
-import { hull, PALETTE } from './reg-cluster.js?v=10';
-import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=10';
-import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=10';
+import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=11';
+import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=11';
+import { hull, PALETTE } from './reg-cluster.js?v=11';
+import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=11';
+import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=11';
 
 let ctx = null;          // { call, getRows, openDetail, refreshAll }
 let fleet = null;        // /admin/fleet payload
@@ -519,9 +519,17 @@ function drawRoute(L, fams, bus) {
   const school = [Number(fleet.settings.school_lat), Number(fleet.settings.school_lng)];
   const pts = [school];
   L.marker(school, { icon: L.divIcon({ className: '', html: `<div class="rg-centroid">🏫 ${esc(fleet.settings.school_name)}</div>`, iconSize: [160, 20], iconAnchor: [80, 10] }) }).addTo(map);
-  if (bus.start_lat != null) {
-    L.marker([bus.start_lat, bus.start_lng], { icon: L.divIcon({ className: '', html: '<div class="rg-centroid" style="background:#15803d">Start</div>', iconSize: [50, 20], iconAnchor: [25, 10] }) }).addTo(map);
-    pts.push([bus.start_lat, bus.start_lng]);
+  // Driver start point = stop "0", labelled with the departure time.
+  const start = editing.start || (bus.start_lat != null ? [bus.start_lat, bus.start_lng] : null);
+  if (start) {
+    const tt = tripTimes();
+    const leave = editing.start && tt?.depart ? tt.depart : null;
+    L.marker(start, { zIndexOffset: 500, icon: L.divIcon({ className: '', html: '<div class="rg-dot" style="background:#15803d;width:30px;height:30px;border:3px solid #fff">0</div>', iconSize: [30, 30], iconAnchor: [15, 15] }) })
+      .bindTooltip(`Start${leave ? ` · leave ${leave}` : ''}`, { permanent: true, direction: 'top', offset: [0, -14] })
+      .bindPopup(`<div class="rg-popup"><b>0 · Driver start point</b><br>${leave ? `Leave at <b>${leave}</b><br>${km(tt.toFirstM)} · ~${mins(tt.toFirstS)} to stop 1<br>` : 'Generate or re-optimise the route to get the departure time.<br>'}
+        <a href="${esc(googleMapsUrl(start[0], start[1]))}" target="_blank" rel="noopener noreferrer">Google Maps</a></div>`)
+      .addTo(map);
+    pts.push(start);
   }
   if (editing.geometry.length) L.polyline(editing.geometry, { color: busColor(bus.id), weight: 5, opacity: 0.8 }).addTo(map);
   editing.stops.forEach((s, i) => {
@@ -539,8 +547,9 @@ function drawRoute(L, fams, bus) {
 
 function renderStopList(el, fams, panel) {
   const tt = tripTimes();
-  const startRow = editing.start && tt ? `<div class="sj-card" style="padding:8px 10px;margin-bottom:6px;border-color:#15803d"><b style="color:#15803d">Start</b> · driver leaves at <b>${tt.depart}</b><br>
-    <span class="sj-small sj-muted">${km(tt.toFirstM)} · ~${mins(tt.toFirstS)} to stop 1</span></div>` : '';
+  const startRow = editing.start && tt ? `<div class="sj-card" style="padding:8px 10px;margin-bottom:6px;display:flex;gap:8px;align-items:center;border-color:#15803d">
+    <b style="min-width:26px;color:#15803d">0</b>
+    <div style="flex:1;min-width:0"><b>Driver start point</b><br><span class="sj-small sj-muted">leave ~${tt.depart} · next ${km(tt.toFirstM)} (~${mins(tt.toFirstS)})</span></div></div>` : '';
   el.innerHTML = editing.stops.length ? `${startRow}<ol style="list-style:none;margin:0;padding:0">${editing.stops.map((s, i) => {
     const f = fams.get(s.code);
     return `<li draggable="true" data-i="${i}" class="sj-card" style="padding:8px 10px;margin-bottom:6px;display:flex;gap:8px;align-items:center;${s.locked ? 'border-color:#101828' : ''}">
@@ -593,7 +602,7 @@ async function driverSheet(bus, fams) {
       r.building || '', r.street || '', r.landmark || '', r.pickup_notes || '', f ? googleMapsUrl(f.lat, f.lng) : ''];
   });
   const tt = tripTimes();
-  if (editing.start && tt) rows.unshift(['Start', tt.depart, 'Leave start point', '', '', '', '', '', '', '', '', `${km(tt.toFirstM)} to stop 1`, googleMapsUrl(editing.start[0], editing.start[1])]);
+  if (editing.start && tt) rows.unshift([0, tt.depart, 'Driver start point — leave', '', '', '', '', '', '', '', '', `${km(tt.toFirstM)} to stop 1`, googleMapsUrl(editing.start[0], editing.start[1])]);
   const school = [Number(fleet.settings.school_lat), Number(fleet.settings.school_lng)];
   const pts = [...(editing.start ? [editing.start] : []), ...editing.stops.map((s) => [fams.get(s.code).lat, fams.get(s.code).lng]), school];
   const links = googleDirectionsLinks(pts);
