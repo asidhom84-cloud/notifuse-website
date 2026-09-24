@@ -349,3 +349,6 @@ html[lang="ar"] .sj-table thead th, html[lang="ar"] .sj-totalbar .k { letter-spa
   .sj-tabs { width: 100%; }
   .sj-tab { flex: 1 1 0; padding: 8px 6px; }
 }
+.sj-chip-on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.sj-chip-n { display: inline-block; min-width: 1.4em; padding: 0 5px; margin-inline-start: 4px; border-radius: 999px; background: rgba(14, 116, 144, 0.14); font-size: 0.75rem; }
+.sj-chip-on .sj-chip-n { background: rgba(255, 255, 255, 0.25); }

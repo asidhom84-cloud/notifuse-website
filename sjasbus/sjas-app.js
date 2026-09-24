@@ -2,8 +2,8 @@
 import {
   api, ApiError, busKey, busSheets, copyText, downloadExcel, egp, esc, fmtDate, local, num,
   openLightbox, session, submissionForm, toast, today, tokenFrom,
-} from './sjas-common.js?v=6';
-import { getLang, initLang, setLang, t, tBus } from './sjas-i18n.js?v=6';
+} from './sjas-common.js?v=7';
+import { getLang, initLang, setLang, t, tBus } from './sjas-i18n.js?v=7';
 
 const VIEWER_KEY = 'sjas.viewer';
 const EDITOR_KEY = 'sjas.editor';
@@ -401,6 +401,7 @@ function renderAdd() {
   submissionForm(app.querySelector('[data-form]'), {
     mode: 'create',
     buses: data?.buses,
+    rows: data?.rows,
     districts: knownDistricts(),
     onCancel: () => { location.hash = ''; },
     onSubmit: async (fd) => {
@@ -502,6 +503,7 @@ async function renderEditForm() {
     mode: 'edit',
     initial: mine,
     buses: data?.buses,
+    rows: data?.rows,
     districts: knownDistricts(),
     onCancel: () => { location.hash = ''; },
     onSubmit: async (fd) => {

@@ -2,7 +2,7 @@
 import {
   api, busSheets, downloadExcel, egp, esc, fmtDate, fmtDateTime, num, openLightbox, openModal,
   session, submissionForm, toast, today, tokenFrom,
-} from './sjas-common.js?v=6';
+} from './sjas-common.js?v=7';
 
 const ADMIN_KEY = 'sjas.admin';
 const app = document.getElementById('sj-app');
@@ -507,6 +507,7 @@ function renderEdit(body, d, reload) {
     mode: 'admin',
     initial: d,
     buses: data.buses,
+    rows: data.rows,
     districts: data.districts.map((x) => x.district).filter(Boolean),
     onCancel: () => reload(),
     onSubmit: async (fd) => {

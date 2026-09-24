@@ -1,7 +1,7 @@
 // SJAS Bus portal — shared helpers for the parent page and the admin page.
 // No secrets live here: every request is authorised server-side by sjasbus-api.
 
-import { t, tBus, isRtl } from './sjas-i18n.js?v=6';
+import { t, tBus, isRtl } from './sjas-i18n.js?v=7';
 
 const PROD_API = 'https://onfoclxqgiuzsdsybnyi.supabase.co/functions/v1/sjasbus-api';
 const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
@@ -464,6 +464,31 @@ export function openLightbox(data, { reload, startIndex = 0 } = {}) {
 // }
 // ---------------------------------------------------------------------------
 
+// District usage from existing ledger rows: per bus and overall. Spelling
+// variants (same districtKey) are counted together under the most-used spelling.
+function districtStats(rows) {
+  const byBus = new Map();
+  const all = new Map();
+  const add = (map, r) => {
+    const k = districtKey(r.district);
+    if (!k) return;
+    const e = map.get(k) || { count: 0, spellings: new Map() };
+    e.count += 1;
+    e.spellings.set(r.district, (e.spellings.get(r.district) || 0) + 1);
+    map.set(k, e);
+  };
+  for (const r of rows || []) {
+    if (!r.district || (r.status && r.status !== 'active')) continue;
+    add(all, r);
+    if (!byBus.has(r.bus_key)) byBus.set(r.bus_key, new Map());
+    add(byBus.get(r.bus_key), r);
+  }
+  const list = (map) => [...(map || new Map()).values()]
+    .map((e) => ({ label: [...e.spellings].sort((a, b) => b[1] - a[1])[0][0], count: e.count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  return { forBus: (key) => list(byBus.get(key)), popular: () => list(all) };
+}
+
 const PER_PAYMENT_FILES = 5;
 const MAX_NEW_FILES = 10;
 
@@ -473,6 +498,7 @@ export function submissionForm(root, opts) {
   const isAdmin = opts.mode === 'admin';
   const knownDistricts = [...new Set((opts.districts || []).filter(Boolean))];
   const busMap = new Map((opts.buses || []).map((b) => [b.bus_key, b]));
+  const stats = districtStats(opts.rows);
 
   const state = {
     students: (init.students && init.students.length ? init.students : ['']).slice(),
@@ -602,18 +628,43 @@ export function submissionForm(root, opts) {
       const [a, b2] = merged.bus_key.split('/');
       busHelp.innerHTML = `${esc(t('Buses {a} and {b} were merged. Did you mean', { a, b: b2 }))} <button type="button" class="sj-chip" data-pick-bus="${esc(merged.bus_key)}">${esc(tBus(merged.bus_label))}</button>?`;
     }
-    const dists = bus?.districts?.filter(Boolean) || [];
+    // Suggest districts other families on this bus used (most common first).
     const distInput = $('#f-district');
-    if (dists.length && (!distInput.value.trim() || state.districtAuto)) {
-      distInput.value = dists[0];
-      state.districtAuto = true;
-      distHelp.className = 'sj-help sj-good';
-      distHelp.textContent = t('Filled in from other {bus} families — change it if yours is different.', { bus: tBus(bus.bus_label) });
-    }
-    const others = dists.filter((x) => x !== distInput.value);
-    if (others.length) {
-      distChips.innerHTML = `<span class="sj-help" style="margin:0">${esc(t('Also on {bus}:', { bus: tBus(bus.bus_label) }))}</span>` +
-        others.map((x) => `<button type="button" class="sj-chip" data-pick="${esc(x)}">${esc(x)}</button>`).join('');
+    const busName = tBus(bus ? bus.bus_label : busLabel(raw));
+    const choices = stats.forBus(key);
+    const chip = (o, withCount) => {
+      const on = districtKey(distInput.value) === districtKey(o.label);
+      return `<button type="button" class="sj-chip ${on ? 'sj-chip-on' : ''}" data-pick="${esc(o.label)}" aria-pressed="${on}">${esc(o.label)}${withCount ? ` <span class="sj-chip-n">${num(o.count)}</span>` : ''}</button>`;
+    };
+    if (choices.length) {
+      const total = choices.reduce((n, o) => n + o.count, 0);
+      const clear = choices.length === 1 || choices[0].count / total >= 0.8;
+      if (!distInput.value.trim() || state.districtAuto) {
+        if (clear) {
+          distInput.value = choices[0].label;
+          state.districtAuto = true;
+          distHelp.className = 'sj-help sj-good';
+          distHelp.textContent = t('Filled in from other {bus} families — change it if yours is different.', { bus: busName });
+        } else {
+          distInput.value = '';
+          state.districtAuto = false;
+          distHelp.className = 'sj-help';
+          distHelp.textContent = t('Families on this bus live in different districts — tap yours below, or type it.');
+        }
+      }
+      distChips.innerHTML = `<span class="sj-help" style="margin:0;width:100%">${esc(t('Districts of families on {bus}:', { bus: busName }))}</span>` +
+        choices.map((o) => chip(o, true)).join('');
+    } else if (!merged) {
+      if (state.districtAuto) {
+        distInput.value = '';
+        state.districtAuto = false;
+        distHelp.textContent = '';
+      }
+      const popular = stats.popular().slice(0, 8);
+      if (popular.length) {
+        distChips.innerHTML = `<span class="sj-help" style="margin:0;width:100%">${esc(t('No families on {bus} yet. Common districts:', { bus: busName }))}</span>` +
+          popular.map((o) => chip(o, false)).join('');
+      }
     }
   }
   function updateDistrict() {
@@ -632,7 +683,15 @@ export function submissionForm(root, opts) {
     }
   }
   $('#f-bus').addEventListener('input', updateBus);
-  $('#f-district').addEventListener('input', () => { state.districtAuto = false; updateDistrict(); });
+  $('#f-district').addEventListener('input', () => {
+    state.districtAuto = false;
+    updateDistrict();
+    distChips.querySelectorAll('[data-pick]').forEach((c) => {
+      const on = districtKey($('#f-district').value) === districtKey(c.dataset.pick);
+      c.classList.toggle('sj-chip-on', on);
+      c.setAttribute('aria-pressed', String(on));
+    });
+  });
   $('#f-district').addEventListener('blur', () => {
     const m = matchDistrict($('#f-district').value, knownDistricts);
     if (m?.exact) $('#f-district').value = m.district;
@@ -652,7 +711,8 @@ export function submissionForm(root, opts) {
     distHelp.textContent = '';
     updateBus();
   });
-  if (init.bus_number) busHelp.textContent = t('Listed as: {label}', { label: tBus(busMap.get(busKey(init.bus_number))?.bus_label || busLabel(init.bus_number)) });
+  // Editing: show the bus label and district choices without touching the saved district.
+  if (init.bus_number) updateBus();
 
   // ----- Payments
   const paymentsEl = $('[data-payments]');
