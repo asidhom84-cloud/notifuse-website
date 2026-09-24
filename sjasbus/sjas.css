@@ -324,3 +324,28 @@ table.sj-table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
 }
 .sj-secret b { white-space: nowrap; }
 @media (max-width: 400px) { .sj-secret b { font-size: 1.2rem; } }
+
+/* ---------- Language switch & Arabic (RTL) ---------- */
+.sj-langbtn { font-weight: 700; min-width: 76px; }
+html[lang="ar"] body, html[lang="ar"] button, html[lang="ar"] input, html[lang="ar"] select, html[lang="ar"] textarea {
+  font-family: "IBM Plex Sans Arabic", var(--font-body);
+}
+html[lang="ar"] .sj-hero h1 small, html[lang="ar"] .sj-formcard h2, html[lang="ar"] .sj-gate h1 { font-family: "IBM Plex Sans Arabic", var(--font-display); }
+html[lang="ar"] .sj-table thead th, html[lang="ar"] .sj-totalbar .k { letter-spacing: 0; text-transform: none; }
+.sj-table th, .sj-table td { text-align: start; }
+.sj-table .r { text-align: end; }
+[dir="rtl"] .sj-search svg { left: auto; right: 12px; }
+[dir="rtl"] .sj-toolbar .sj-search input { padding-left: 12px; padding-right: 40px; }
+[dir="rtl"] .sj-amount span { left: auto; right: 12px; }
+[dir="rtl"] .sj-amount input { padding-left: 12px; padding-right: 50px; }
+[dir="rtl"] .sj-thumb button { right: auto; left: 3px; }
+[dir="rtl"] .sj-filterchip { padding: 4px 12px 4px 6px; }
+[dir="rtl"] .sj-note ul { padding-left: 0; padding-right: 20px; }
+[dir="rtl"] .sj-lb-pay .p { text-align: right; }
+[dir="rtl"] .sj-lb-nav.prev { left: auto; right: 10px; }
+[dir="rtl"] .sj-lb-nav.next { right: auto; left: 10px; }
+.sj-lcard .sj-amt, .sj-table .sj-amt, .sj-stat .v, .sj-cardtotal .sj-num, .sj-totalbar .v, .sj-code { unicode-bidi: isolate; }
+@media (max-width: 640px) {
+  .sj-tabs { width: 100%; }
+  .sj-tab { flex: 1 1 0; padding: 8px 6px; }
+}

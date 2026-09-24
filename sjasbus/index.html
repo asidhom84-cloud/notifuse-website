@@ -16,18 +16,19 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/sjasbus/sjas.css?v=4" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/sjasbus/sjas.css?v=5" />
 </head>
 <body>
   <header class="sj-topbar">
     <div class="sj-wrap">
       <a class="sj-brand" href="/sjasbus/" aria-label="SJAS Bus home">
         <img src="/assets/brand/noti-family-logo.jpg" alt="" width="36" height="36" />
-        <div><b>SJAS Bus</b><span>Payment Reconciliation · by Noti Family</span></div>
+        <div><b>SJAS Bus</b><span data-i18n="Payment Reconciliation · by Noti Family">Payment Reconciliation · by Noti Family</span></div>
       </a>
       <span class="sj-spacer"></span>
-      <button type="button" class="sj-btn sj-btn-ghost sj-btn-sm" id="sj-signout" hidden>Sign out</button>
+      <button type="button" class="sj-btn sj-btn-sm sj-langbtn" id="sj-lang">العربية</button>
+      <button type="button" class="sj-btn sj-btn-ghost sj-btn-sm" id="sj-signout" data-i18n="Sign out" hidden>Sign out</button>
     </div>
   </header>
 
@@ -36,10 +37,10 @@
   </main>
 
   <div class="sj-totalbar" id="sj-totalbar" hidden>
-    <div class="sj-wrap"><div class="k">TOTAL DOCUMENTED<span data-sub>All families</span></div><div class="v" data-v>EGP 0</div></div>
+    <div class="sj-wrap"><div class="k"><b data-i18n="TOTAL DOCUMENTED">TOTAL DOCUMENTED</b><span data-sub>All families</span></div><div class="v" data-v>EGP 0</div></div>
   </div>
 
   <noscript><p class="sj-wrap">Please enable JavaScript to use the SJAS Bus portal.</p></noscript>
-  <script type="module" src="/sjasbus/sjas-app.js?v=4"></script>
+  <script type="module" src="/sjasbus/sjas-app.js?v=5"></script>
 </body>
 </html>

@@ -1,6 +1,8 @@
 // SJAS Bus portal — shared helpers for the parent page and the admin page.
 // No secrets live here: every request is authorised server-side by sjasbus-api.
 
+import { t, tBus, isRtl } from './sjas-i18n.js?v=5';
+
 const PROD_API = 'https://onfoclxqgiuzsdsybnyi.supabase.co/functions/v1/sjasbus-api';
 const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 // An API override is only honoured on localhost so a crafted link can never
@@ -58,11 +60,11 @@ export async function api(path, { method = 'GET', token, body, form } = {}) {
   try {
     res = await fetch(API + path, { method, headers, body: form || (body ? JSON.stringify(body) : undefined) });
   } catch {
-    throw new ApiError(0, 'Could not reach the server. Please check your connection and try again.');
+    throw new ApiError(0, t('Could not reach the server. Please check your connection and try again.'));
   }
   let data = null;
   try { data = await res.json(); } catch { /* non-JSON */ }
-  if (!res.ok) throw new ApiError(res.status, (data && data.error) || `Request failed (${res.status})`);
+  if (!res.ok) throw new ApiError(res.status, t((data && data.error) || `Request failed (${res.status})`));
   return data;
 }
 
@@ -74,7 +76,8 @@ const nf = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 const nf2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 export const egp = (n) => {
   const v = Number(n) || 0;
-  return `EGP ${(Number.isInteger(v) ? nf : nf2).format(v)}`;
+  const f = (Number.isInteger(v) ? nf : nf2).format(v);
+  return isRtl() ? `${f} ${t('EGP')}` : `EGP ${f}`;
 };
 export const num = (n) => nf.format(Number(n) || 0);
 
@@ -220,7 +223,7 @@ async function decode(file) {
 
 export async function prepareImage(file) {
   const okType = /image\/(jpeg|png|hei[cf])/i.test(file.type) || /\.(jpe?g|png|hei[cf])$/i.test(file.name);
-  if (!okType) throw new Error(`"${file.name}" is not a JPG, PNG or HEIC image.`);
+  if (!okType) throw new Error(t('"{name}" is not a JPG, PNG or HEIC image.', { name: file.name }));
   const originalSha = await sha256Hex(await file.arrayBuffer());
   let blob = null;
   try {
@@ -239,10 +242,10 @@ export async function prepareImage(file) {
     blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.88));
   } catch { /* undecodable here (e.g. HEIC on Chrome) */ }
   if (!blob) {
-    if (!isHeic(file)) throw new Error(`"${file.name}" could not be read as an image.`);
+    if (!isHeic(file)) throw new Error(t('"{name}" could not be read as an image.', { name: file.name }));
     blob = file; // server accepts HEIC as-is
   }
-  if (blob.size > MAX_BYTES) throw new Error(`"${file.name}" is too large (max 10 MB).`);
+  if (blob.size > MAX_BYTES) throw new Error(t('"{name}" is too large (max 10 MB).', { name: file.name }));
   const name = blob === file ? file.name : file.name.replace(/\.[^.]+$/, '') + '.jpg';
   return { blob, name, originalSha, preview: blob === file ? null : URL.createObjectURL(blob) };
 }
@@ -319,13 +322,13 @@ export function openLightbox(data, { reload, startIndex = 0 } = {}) {
   el.className = 'sj-lb';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
-  el.setAttribute('aria-label', 'Payment receipts');
+  el.setAttribute('aria-label', t('Payment receipts'));
   el.innerHTML = `
     <div class="sj-lb-head"><div class="t"><b></b><span></span></div>
-      <button class="sj-close" type="button" aria-label="Close receipts">×</button></div>
-    <div class="sj-lb-pay" aria-label="Payments"></div>
+      <button class="sj-close" type="button" aria-label="${esc(t('Close'))}">×</button></div>
+    <div class="sj-lb-pay" aria-label="${esc(t('Payments'))}"></div>
     <div class="sj-lb-stage"></div>
-    <div class="sj-lb-foot"><span class="cap"></span><a class="open" target="_blank" rel="noopener noreferrer">Open full size</a><span class="cnt"></span></div>`;
+    <div class="sj-lb-foot"><span class="cap"></span><a class="open" target="_blank" rel="noopener noreferrer">${esc(t('Open full size'))}</a><span class="cnt"></span></div>`;
   el.querySelector('.t b').textContent = d.title;
   el.querySelector('.t span').textContent = d.subtitle || '';
   const stage = el.querySelector('.sj-lb-stage');
@@ -335,11 +338,11 @@ export function openLightbox(data, { reload, startIndex = 0 } = {}) {
   const openLink = el.querySelector('.open');
 
   const payById = new Map(d.payments.map((p) => [p.id, p]));
-  const payDesc = (p) => [egp(p.amount), fmtDate(p.payment_date), p.transaction_reference ? `Ref ${p.transaction_reference}` : ''].filter(Boolean).join(' · ');
+  const payDesc = (p) => [egp(p.amount), fmtDate(p.payment_date), p.transaction_reference ? t('Ref {ref}', { ref: p.transaction_reference }) : ''].filter(Boolean).join(' · ');
 
   payBar.innerHTML =
-    d.payments.map((p) => `<button type="button" class="p" data-pay="${esc(p.id)}">Payment ${p.number}<br><b>${esc(egp(p.amount))}</b>${p.payment_date ? ` · ${esc(fmtDate(p.payment_date))}` : ''}${p.transaction_reference ? `<br>Ref ${esc(p.transaction_reference)}` : ''}</button>`).join('') +
-    (d.payments.length > 1 ? `<div class="p tot">Total<br><b>${esc(egp(d.amount_total))}</b></div>` : '');
+    d.payments.map((p) => `<button type="button" class="p" data-pay="${esc(p.id)}">${esc(t('Payment {n}', { n: p.number }))}<br><b>${esc(egp(p.amount))}</b>${p.payment_date ? ` · ${esc(fmtDate(p.payment_date))}` : ''}${p.transaction_reference ? `<br>${esc(t('Ref {ref}', { ref: p.transaction_reference }))}` : ''}</button>`).join('') +
+    (d.payments.length > 1 ? `<div class="p tot">${esc(t('Total'))}<br><b>${esc(egp(d.amount_total))}</b></div>` : '');
   payBar.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-pay]');
     if (!btn) return;
@@ -354,17 +357,17 @@ export function openLightbox(data, { reload, startIndex = 0 } = {}) {
     const p = ev ? payById.get(ev.payment_id) : null;
     payBar.querySelectorAll('[data-pay]').forEach((b) => b.classList.toggle('on', !!p && b.dataset.pay === p.id));
     cnt.textContent = d.evidence.length ? `${idx + 1} / ${d.evidence.length}` : '';
-    cap.textContent = p ? `Payment ${p.number} — ${payDesc(p)}` : d.evidence.length ? 'Payment receipt' : '';
+    cap.textContent = p ? `${t('Payment {n}', { n: p.number })} — ${payDesc(p)}` : d.evidence.length ? t('Payment receipt') : '';
     stage.innerHTML = '';
     if (!ev) {
-      stage.innerHTML = '<div class="sj-lb-msg">No receipts are available for this record.</div>';
+      stage.innerHTML = `<div class="sj-lb-msg">${esc(t('No receipts are available for this record.'))}</div>`;
       openLink.hidden = true;
       return;
     }
     openLink.hidden = !ev.url;
     openLink.href = ev.url || '#';
     const img = new Image();
-    img.alt = `Payment receipt ${idx + 1} of ${d.evidence.length}`;
+    img.alt = t('Payment receipt {i} of {n}', { i: idx + 1, n: d.evidence.length });
     img.draggable = false;
     img.src = ev.url;
     img.addEventListener('error', async () => {
@@ -378,11 +381,13 @@ export function openLightbox(data, { reload, startIndex = 0 } = {}) {
         } catch { /* fall through */ }
       }
       const heic = /hei[cf]/.test(ev.mime_type || '');
-      stage.innerHTML = `<div class="sj-lb-msg">${heic ? 'This receipt is a HEIC photo, which this browser cannot display.' : 'This receipt could not be loaded.'}<br><a href="${esc(ev.url)}" target="_blank" rel="noopener noreferrer">Open / download it</a></div>`;
+      stage.innerHTML = `<div class="sj-lb-msg">${esc(heic ? t('This receipt is a HEIC photo, which this browser cannot display.') : t('This receipt could not be loaded.'))}<br><a href="${esc(ev.url)}" target="_blank" rel="noopener noreferrer">${esc(t('Open / download it'))}</a></div>`;
     });
     stage.appendChild(img);
     if (d.evidence.length > 1) {
-      stage.insertAdjacentHTML('beforeend', '<button class="sj-lb-nav prev" type="button" aria-label="Previous receipt">‹</button><button class="sj-lb-nav next" type="button" aria-label="Next receipt">›</button>');
+      // Logical positions: in Arabic (RTL) "previous" sits on the right.
+      const [back, fwd] = isRtl() ? ['›', '‹'] : ['‹', '›'];
+      stage.insertAdjacentHTML('beforeend', `<button class="sj-lb-nav prev" type="button" aria-label="${esc(t('Previous receipt'))}">${back}</button><button class="sj-lb-nav next" type="button" aria-label="${esc(t('Next receipt'))}">${fwd}</button>`);
     }
   }
 
@@ -420,14 +425,15 @@ export function openLightbox(data, { reload, startIndex = 0 } = {}) {
     const dy = e.changedTouches[0].clientY - sy;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
       swiped = true;
-      show(idx + (dx < 0 ? 1 : -1));
+      show(idx + ((dx < 0) !== isRtl() ? 1 : -1));
       setTimeout(() => { swiped = false; }, 350);
     }
   });
 
   const onKey = (e) => {
-    if (e.key === 'ArrowRight') show(idx + 1);
-    else if (e.key === 'ArrowLeft') show(idx - 1);
+    const step = isRtl() ? -1 : 1;
+    if (e.key === 'ArrowRight') show(idx + step);
+    else if (e.key === 'ArrowLeft') show(idx - step);
   };
   document.addEventListener('keydown', onKey);
   const layer = openLayer(el, { onClose: () => document.removeEventListener('keydown', onKey) });
@@ -481,59 +487,59 @@ export function submissionForm(root, opts) {
     <form class="sj-form" novalidate>
       <div class="sj-note sj-note-info">
         <div class="sj-vis">
-          <div><b>Visible to other parents with the SJAS Bus password</b>
-            <ul><li>Parent name</li><li>Student names</li><li>Bus number &amp; district</li><li>Amount paid (each payment, date &amp; reference)</li><li>Uploaded payment screenshots</li></ul></div>
-          <div><b>Private — administrator only</b>
-            <ul><li>Contact phone</li><li>Edit PIN</li><li>Notes you add</li><li>Internal review notes</li></ul></div>
+          <div><b>${esc(t('Visible to other parents with the SJAS Bus password'))}</b>
+            <ul>${['Parent name', 'Student names', 'Bus number & district', 'Amount paid (each payment, date & reference)', 'Uploaded payment screenshots'].map((x) => `<li>${esc(t(x))}</li>`).join('')}</ul></div>
+          <div><b>${esc(t('Private — administrator only'))}</b>
+            <ul>${['Contact phone', 'Edit PIN', 'Notes you add', 'Internal review notes'].map((x) => `<li>${esc(t(x))}</li>`).join('')}</ul></div>
         </div>
       </div>
 
-      <div class="sj-field"><label for="f-parent">Parent full name <span class="sj-req">*</span></label>
+      <div class="sj-field"><label for="f-parent">${esc(t('Parent full name'))} <span class="sj-req">*</span></label>
         <input id="f-parent" name="parent_name" autocomplete="name" maxlength="120" required></div>
 
-      <div class="sj-field"><label for="f-phone">Contact phone <span class="sj-opt">(optional · private)</span></label>
-        <input id="f-phone" name="contact_phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="40" placeholder="e.g. 010 1234 5678">
-        <div class="sj-help">Only the administrator can see this, in case they need to reach you.</div></div>
+      <div class="sj-field"><label for="f-phone">${esc(t('Contact phone'))} <span class="sj-opt">${esc(t('(optional · private)'))}</span></label>
+        <input id="f-phone" name="contact_phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="40" placeholder="010 1234 5678" dir="ltr">
+        <div class="sj-help">${esc(t('Only the administrator can see this, in case they need to reach you.'))}</div></div>
 
       <div class="sj-row">
-        <div class="sj-field"><label for="f-bus">Bus number <span class="sj-req">*</span></label>
-          <input id="f-bus" name="bus_number" maxlength="40" required placeholder="e.g. 37" autocomplete="off">
+        <div class="sj-field"><label for="f-bus">${esc(t('Bus number'))} <span class="sj-req">*</span></label>
+          <input id="f-bus" name="bus_number" maxlength="40" required placeholder="${esc(t('e.g. 37'))}" autocomplete="off">
           <div class="sj-help" data-bus-help></div></div>
-        <div class="sj-field"><label for="f-district">District <span class="sj-req">*</span></label>
-          <input id="f-district" name="district" maxlength="60" required placeholder="e.g. Madinaty" autocomplete="off" list="sj-district-list">
+        <div class="sj-field"><label for="f-district">${esc(t('District'))} <span class="sj-req">*</span></label>
+          <input id="f-district" name="district" maxlength="60" required placeholder="${esc(t('e.g. Madinaty'))}" autocomplete="off" list="sj-district-list">
+          ${isRtl() ? `<div class="sj-help">${esc(t('Please write the district in English (e.g. Madinaty) so families on the same bus are grouped together.'))}</div>` : ''}
           <datalist id="sj-district-list">${knownDistricts.map((d) => `<option value="${esc(d)}"></option>`).join('')}</datalist>
           <div class="sj-help" data-district-help></div>
           <div class="sj-chips" data-district-chips></div></div>
       </div>
 
-      <div class="sj-field"><span class="sj-label">Students <span class="sj-req">*</span></span>
+      <div class="sj-field"><span class="sj-label">${esc(t('Students'))} <span class="sj-req">*</span></span>
         <div data-students></div>
-        <button type="button" class="sj-linkbtn" data-add-student>+ Add another student</button></div>
+        <button type="button" class="sj-linkbtn" data-add-student>${esc(t('+ Add another student'))}</button></div>
 
       <div class="sj-section">
-        <h3>Payments to the bus company</h3>
-        <div class="sj-note sj-note-warn"><b>Before uploading screenshots</b>
-          Please crop or cover anything not needed — especially <b style="display:inline">bank balances, account / card numbers</b> and unrelated transactions. The amount, date, and reference are enough.
-          Other parents with the password will be able to see these screenshots.</div>
-        <p class="sj-help" style="margin-top:0">Paid in installments? Add each one separately with its own screenshot(s). Accepted: JPG, PNG, HEIC.</p>
+        <h3>${esc(t('Payments to the bus company'))}</h3>
+        <div class="sj-note sj-note-warn"><b>${esc(t('Before uploading screenshots'))}</b>
+          ${esc(t('Please crop or cover anything not needed — especially bank balances, account / card numbers and unrelated transactions. The amount, date, and reference are enough. Other parents with the password will be able to see these screenshots.'))}</div>
+        <p class="sj-help" style="margin-top:0">${esc(t('Paid in installments? Add each one separately with its own screenshot(s). Accepted: JPG, PNG, HEIC.'))}</p>
         <div data-payments></div>
-        <button type="button" class="sj-btn sj-btn-sm" data-add-payment>+ Add another payment</button>
-        <div class="sj-formtotal"><span>Total you paid</span><span class="sj-num" data-total>EGP 0</span></div>
+        <button type="button" class="sj-btn sj-btn-sm" data-add-payment>${esc(t('+ Add another payment'))}</button>
+        <div class="sj-formtotal"><span>${esc(t('Total you paid'))}</span><span class="sj-num" data-total>${esc(egp(0))}</span></div>
       </div>
 
       <div class="sj-section">
-        <div class="sj-field"><label for="f-notes">Notes <span class="sj-opt">(optional · administrator only)</span></label>
+        <div class="sj-field"><label for="f-notes">${esc(t('Notes'))} <span class="sj-opt">${esc(t('(optional · administrator only)'))}</span></label>
           <textarea id="f-notes" name="parent_notes" maxlength="1000"></textarea></div>
         ${isAdmin ? `<div class="sj-field"><label for="f-admin-notes">Admin notes <span class="sj-opt">(internal)</span></label>
           <textarea id="f-admin-notes" name="admin_notes" maxlength="4000"></textarea></div>` : ''}
         ${isCreate ? `<label class="sj-check"><input type="checkbox" name="consent" required>
-          <span>I understand that my name, my children's names, bus number, district, amounts paid and payment screenshots will be visible to other parents who have the SJAS Bus access password.</span></label>` : ''}
+          <span>${esc(t("I understand that my name, my children's names, bus number, district, amounts paid and payment screenshots will be visible to other parents who have the SJAS Bus access password."))}</span></label>` : ''}
       </div>
 
       <div class="sj-note sj-note-err" data-error hidden role="alert"></div>
       <div class="sj-formfoot">
-        ${opts.onCancel ? '<button type="button" class="sj-btn" data-cancel>Cancel</button>' : ''}
-        <button type="submit" class="sj-btn sj-btn-primary" data-submit>${isCreate ? 'Submit my payment' : 'Save changes'}</button>
+        ${opts.onCancel ? `<button type="button" class="sj-btn" data-cancel>${esc(t('Cancel'))}</button>` : ''}
+        <button type="submit" class="sj-btn sj-btn-primary" data-submit>${esc(isCreate ? t('Submit my payment') : t('Save changes'))}</button>
       </div>
     </form>`;
 
@@ -551,8 +557,8 @@ export function submissionForm(root, opts) {
   function renderStudents() {
     studentsEl.innerHTML = state.students.map((s, i) => `
       <div class="sj-inline" style="margin-bottom:8px">
-        <input class="sj-input" data-student="${i}" maxlength="80" placeholder="Student ${i + 1} name" aria-label="Student ${i + 1} name" value="${esc(s)}">
-        ${state.students.length > 1 ? `<button type="button" class="sj-iconbtn" data-rm-student="${i}" aria-label="Remove student ${i + 1}">×</button>` : ''}
+        <input class="sj-input" data-student="${i}" maxlength="80" placeholder="${esc(t('Student {n} name', { n: i + 1 }))}" aria-label="${esc(t('Student {n} name', { n: i + 1 }))}" value="${esc(s)}">
+        ${state.students.length > 1 ? `<button type="button" class="sj-iconbtn" data-rm-student="${i}" aria-label="${esc(t('Remove student {n}', { n: i + 1 }))}">×</button>` : ''}
       </div>`).join('');
   }
   studentsEl.addEventListener('input', (e) => {
@@ -583,18 +589,18 @@ export function submissionForm(root, opts) {
     distChips.innerHTML = '';
     if (!raw.trim()) { busHelp.textContent = ''; return; }
     const bus = busMap.get(key);
-    busHelp.textContent = `Listed as: ${bus ? bus.bus_label : busLabel(raw)}`;
+    busHelp.textContent = t('Listed as: {label}', { label: tBus(bus ? bus.bus_label : busLabel(raw)) });
     const dists = bus?.districts?.filter(Boolean) || [];
     const distInput = $('#f-district');
     if (dists.length && (!distInput.value.trim() || state.districtAuto)) {
       distInput.value = dists[0];
       state.districtAuto = true;
       distHelp.className = 'sj-help sj-good';
-      distHelp.textContent = `Filled in from other ${bus.bus_label} families — change it if yours is different.`;
+      distHelp.textContent = t('Filled in from other {bus} families — change it if yours is different.', { bus: tBus(bus.bus_label) });
     }
     const others = dists.filter((x) => x !== distInput.value);
     if (others.length) {
-      distChips.innerHTML = `<span class="sj-help" style="margin:0">Also on ${esc(bus.bus_label)}:</span>` +
+      distChips.innerHTML = `<span class="sj-help" style="margin:0">${esc(t('Also on {bus}:', { bus: tBus(bus.bus_label) }))}</span>` +
         others.map((x) => `<button type="button" class="sj-chip" data-pick="${esc(x)}">${esc(x)}</button>`).join('');
     }
   }
@@ -608,9 +614,9 @@ export function submissionForm(root, opts) {
     if (!m || m.district === v) return;
     if (m.exact) {
       distHelp.className = 'sj-help sj-good';
-      distHelp.textContent = `Will be listed as "${m.district}" (same spelling as other families).`;
+      distHelp.textContent = t('Will be listed as "{d}" (same spelling as other families).', { d: m.district });
     } else {
-      distHelp.innerHTML = `Did you mean <button type="button" class="sj-chip" data-pick="${esc(m.district)}">${esc(m.district)}</button>?`;
+      distHelp.innerHTML = `${esc(t('Did you mean'))} <button type="button" class="sj-chip" data-pick="${esc(m.district)}">${esc(m.district)}</button>?`;
     }
   }
   $('#f-bus').addEventListener('input', updateBus);
@@ -628,7 +634,7 @@ export function submissionForm(root, opts) {
     distHelp.textContent = '';
     updateBus();
   });
-  if (init.bus_number) busHelp.textContent = `Listed as: ${busMap.get(busKey(init.bus_number))?.bus_label || busLabel(init.bus_number)}`;
+  if (init.bus_number) busHelp.textContent = t('Listed as: {label}', { label: tBus(busMap.get(busKey(init.bus_number))?.bus_label || busLabel(init.bus_number)) });
 
   // ----- Payments
   const paymentsEl = $('[data-payments]');
@@ -649,26 +655,26 @@ export function submissionForm(root, opts) {
       const ex = existingFor(p, i);
       const thumbs = ex.map((e) => {
         const removed = state.remove.has(e.id) || e.removed;
-        return `<div class="sj-thumb ${removed ? 'sj-removed' : ''}">${e.url ? `<img src="${esc(e.url)}" alt="" loading="lazy">` : 'Image'}
-          ${e.removed ? '' : `<button type="button" data-toggle-ex="${esc(e.id)}" aria-label="${removed ? 'Keep' : 'Remove'} screenshot">${removed ? '↺' : '×'}</button>`}</div>`;
+        return `<div class="sj-thumb ${removed ? 'sj-removed' : ''}">${e.url ? `<img src="${esc(e.url)}" alt="" loading="lazy">` : esc(t('Image'))}
+          ${e.removed ? '' : `<button type="button" data-toggle-ex="${esc(e.id)}" aria-label="${esc(removed ? t('Keep screenshot') : t('Remove screenshot'))}">${removed ? '↺' : '×'}</button>`}</div>`;
       }).join('') + p.files.map((f, j) => `<div class="sj-thumb">${f.preview ? `<img src="${esc(f.preview)}" alt="">` : 'HEIC'}
-          <button type="button" data-rm-file="${i}:${j}" aria-label="Remove new screenshot">×</button></div>`).join('');
+          <button type="button" data-rm-file="${i}:${j}" aria-label="${esc(t('Remove new screenshot'))}">×</button></div>`).join('');
       const canAdd = p.files.length < PER_PAYMENT_FILES;
       return `<div class="sj-payment" data-pay="${i}">
-        <div class="sj-payment-head"><b>Payment ${i + 1}</b>
-          ${state.payments.length > 1 ? `<button type="button" class="sj-btn sj-btn-ghost sj-btn-sm sj-btn-danger" data-rm-payment="${i}">Remove</button>` : ''}</div>
+        <div class="sj-payment-head"><b>${esc(t('Payment {n}', { n: i + 1 }))}</b>
+          ${state.payments.length > 1 ? `<button type="button" class="sj-btn sj-btn-ghost sj-btn-sm sj-btn-danger" data-rm-payment="${i}">${esc(t('Remove'))}</button>` : ''}</div>
         <div class="sj-row">
-          <div class="sj-field"><label for="amt-${p.key}">Amount paid <span class="sj-req">*</span></label>
-            <div class="sj-amount"><span>EGP</span><input id="amt-${p.key}" data-f="amount" inputmode="decimal" placeholder="10,000" value="${esc(p.amount)}" autocomplete="off"></div></div>
-          <div class="sj-field"><label for="date-${p.key}">Payment date <span class="sj-opt">(optional)</span></label>
+          <div class="sj-field"><label for="amt-${p.key}">${esc(t('Amount paid'))} <span class="sj-req">*</span></label>
+            <div class="sj-amount"><span>${esc(t('EGP'))}</span><input id="amt-${p.key}" data-f="amount" inputmode="decimal" placeholder="10,000" value="${esc(p.amount)}" autocomplete="off"></div></div>
+          <div class="sj-field"><label for="date-${p.key}">${esc(t('Payment date'))} <span class="sj-opt">${esc(t('(optional)'))}</span></label>
             <input id="date-${p.key}" data-f="payment_date" type="date" min="2020-01-01" max="${new Date().toISOString().slice(0, 10)}" value="${esc(p.payment_date)}"></div>
         </div>
-        <div class="sj-field"><label for="ref-${p.key}">Transaction reference number <span class="sj-opt">(optional)</span></label>
-          <input id="ref-${p.key}" data-f="transaction_reference" maxlength="80" value="${esc(p.transaction_reference)}" autocomplete="off" placeholder="e.g. 504812345678">
-          <div class="sj-help">The number shown on the receipt — not the method (“InstaPay”, “Cash”). Leave empty if there is none.</div></div>
-        <span class="sj-label">Payment screenshot(s)${isCreate && i === 0 ? ' <span class="sj-req">*</span>' : ''}</span>
+        <div class="sj-field"><label for="ref-${p.key}">${esc(t('Transaction reference number'))} <span class="sj-opt">${esc(t('(optional)'))}</span></label>
+          <input id="ref-${p.key}" data-f="transaction_reference" maxlength="80" value="${esc(p.transaction_reference)}" autocomplete="off" placeholder="${esc(t('e.g. 504812345678'))}" dir="ltr">
+          <div class="sj-help">${esc(t('The number shown on the receipt — not the method (“InstaPay”, “Cash”). Leave empty if there is none.'))}</div></div>
+        <span class="sj-label">${esc(t('Payment screenshot(s)'))}${isCreate && i === 0 ? ' <span class="sj-req">*</span>' : ''}</span>
         <div class="sj-files">${thumbs}
-          ${canAdd ? `<label class="sj-addfile"><input type="file" data-file="${i}" accept="image/jpeg,image/png,image/heic,image/heif,.heic,.heif,.jpg,.jpeg,.png" multiple><span style="font-size:1.25rem">＋</span>Add<br>screenshot</label>` : ''}
+          ${canAdd ? `<label class="sj-addfile"><input type="file" data-file="${i}" accept="image/jpeg,image/png,image/heic,image/heif,.heic,.heif,.jpg,.jpeg,.png" multiple><span style="font-size:1.25rem">＋</span>${esc(t('Add screenshot'))}</label>` : ''}
         </div>
         <div class="sj-help" data-file-msg="${i}"></div>
       </div>`;
@@ -688,7 +694,7 @@ export function submissionForm(root, opts) {
       const i = Number(t.dataset.rmPayment);
       const p = state.payments[i];
       const ex = p.id ? state.existing.filter((x) => x.payment_id === p.id && !x.removed && !state.remove.has(x.id)) : [];
-      if ((p.amount || p.files.length || ex.length) && !confirm(`Remove Payment ${i + 1}${ex.length ? ' and its screenshots' : ''}?`)) return;
+      if ((p.amount || p.files.length || ex.length) && !confirm(t(ex.length ? 'Remove Payment {n} and its screenshots?' : 'Remove Payment {n}?', { n: i + 1 }))) return;
       ex.forEach((x) => state.remove.add(x.id));
       state.payments.splice(i, 1);
       renderPayments();
@@ -711,13 +717,13 @@ export function submissionForm(root, opts) {
     const picked = [...e.target.files];
     e.target.value = '';
     const room = Math.min(PER_PAYMENT_FILES - p.files.length, MAX_NEW_FILES - state.payments.reduce((t, q) => t + q.files.length, 0));
-    if (room <= 0) { msg.textContent = `You can add up to ${PER_PAYMENT_FILES} screenshots per payment and ${MAX_NEW_FILES} per save.`; return; }
-    msg.textContent = 'Preparing images…';
+    if (room <= 0) { msg.textContent = t('You can add up to {a} screenshots per payment and {b} per save.', { a: PER_PAYMENT_FILES, b: MAX_NEW_FILES }); return; }
+    msg.textContent = t('Preparing images…');
     const errors = [];
     for (const file of picked.slice(0, room)) {
       try { p.files.push(await prepareImage(file)); } catch (err) { errors.push(err.message); }
     }
-    if (picked.length > room) errors.push(`Only ${room} more screenshot(s) could be added here.`);
+    if (picked.length > room) errors.push(t('Only {n} more screenshot(s) could be added here.', { n: room }));
     renderPayments();
     const m = paymentsEl.querySelector(`[data-file-msg="${i}"]`);
     if (m) m.textContent = errors.join(' ');
@@ -749,19 +755,19 @@ export function submissionForm(root, opts) {
     const bus = $('#f-bus').value.trim();
     const district = $('#f-district').value.trim();
     const students = state.students.map((s) => s.trim()).filter(Boolean);
-    if (parent.length < 2) return fail('Please enter the parent full name.', $('#f-parent'));
-    if (!bus) return fail('Please enter the bus number.', $('#f-bus'));
-    if (!district) return fail('Please enter the district (e.g. Madinaty).', $('#f-district'));
-    if (!students.length) return fail('Please enter at least one student name.', studentsEl.querySelector('input'));
+    if (parent.length < 2) return fail(t('Please enter the parent full name.'), $('#f-parent'));
+    if (!bus) return fail(t('Please enter the bus number.'), $('#f-bus'));
+    if (!district) return fail(t('Please enter the district (e.g. Madinaty).'), $('#f-district'));
+    if (!students.length) return fail(t('Please enter at least one student name.'), studentsEl.querySelector('input'));
     for (let i = 0; i < state.payments.length; i++) {
       if (!parseAmt(state.payments[i].amount)) {
-        return fail(`Please enter the amount for Payment ${i + 1}.`, paymentsEl.querySelector(`[data-pay="${i}"] [data-f="amount"]`));
+        return fail(t('Please enter the amount for Payment {n}.', { n: i + 1 }), paymentsEl.querySelector(`[data-pay="${i}"] [data-f="amount"]`));
       }
     }
     const newFiles = state.payments.reduce((t, p) => t + p.files.length, 0);
     const keptExisting = state.existing.filter((x) => !x.removed && !state.remove.has(x.id)).length;
-    if (!isAdmin && newFiles + keptExisting === 0) return fail('Please attach at least one payment screenshot.', paymentsEl.querySelector('.sj-addfile'));
-    if (isCreate && !form.consent.checked) return fail('Please tick the box to confirm you understand what other parents can see.', form.consent);
+    if (!isAdmin && newFiles + keptExisting === 0) return fail(t('Please attach at least one payment screenshot.'), paymentsEl.querySelector('.sj-addfile'));
+    if (isCreate && !form.consent.checked) return fail(t('Please tick the box to confirm you understand what other parents can see.'), form.consent);
 
     const data = {
       parent_name: parent,
@@ -791,11 +797,11 @@ export function submissionForm(root, opts) {
 
     const label = submitBtn.textContent;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = `<span class="sj-spin"></span> ${newFiles ? 'Uploading…' : 'Saving…'}`;
+    submitBtn.innerHTML = `<span class="sj-spin"></span> ${esc(newFiles ? t('Uploading…') : t('Saving…'))}`;
     try {
       await opts.onSubmit(fd);
     } catch (err) {
-      fail(err.message || 'Something went wrong. Please try again.');
+      fail(err.message || t('Something went wrong. Please try again.'));
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = label;
@@ -821,7 +827,7 @@ function loadXlsx() {
     s.crossOrigin = 'anonymous';
     s.referrerPolicy = 'no-referrer';
     s.onload = () => resolve(window.XLSX);
-    s.onerror = () => { xlsxPromise = null; reject(new Error('Could not load the Excel exporter. Please try again.')); };
+    s.onerror = () => { xlsxPromise = null; reject(new Error(t('Could not load the Excel exporter. Please try again.'))); };
     document.head.appendChild(s);
   });
   return xlsxPromise;
