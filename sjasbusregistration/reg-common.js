@@ -2,7 +2,7 @@
 // Independent copy: nothing here imports from /sjasbus. No secrets live here;
 // every request is authorised server-side by busreg-api.
 
-import { t } from './reg-i18n.js?v=9';
+import { t } from './reg-i18n.js?v=10';
 
 const PROD_API = 'https://onfoclxqgiuzsdsybnyi.supabase.co/functions/v1/busreg-api';
 const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';

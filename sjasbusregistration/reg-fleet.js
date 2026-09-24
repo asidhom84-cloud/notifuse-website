@@ -1,10 +1,10 @@
 // SJAS Bus Registration — admin: fleet, bus assignment, routes, settings, driver sheets.
 
-import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=9';
-import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=9';
-import { hull, PALETTE } from './reg-cluster.js?v=9';
-import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=9';
-import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=9';
+import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=10';
+import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=10';
+import { hull, PALETTE } from './reg-cluster.js?v=10';
+import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=10';
+import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=10';
 
 let ctx = null;          // { call, getRows, openDetail, refreshAll }
 let fleet = null;        // /admin/fleet payload
@@ -356,6 +356,19 @@ export async function renderRoutes(panel) {
       <button type="button" class="sj-btn" data-approve ${saved.draft && !editing.dirty ? '' : 'disabled'}>Approve route</button>
       <button type="button" class="sj-btn" data-sheet ${editing.stops.length ? '' : 'disabled'}>⬇ Driver sheet</button>
     </div>
+    <div class="rg-maptools" style="margin:0 0 8px">
+      <span class="sj-small"><b>Driver start point:</b> ${bus.start_lat != null ? `<span dir="ltr">${bus.start_lat.toFixed(5)}, ${bus.start_lng.toFixed(5)}</span>` : 'not set — the trip starts at the first stop'}</span>
+      <button type="button" class="sj-btn sj-btn-sm" data-set-start>${bus.start_lat != null ? 'Change start point' : 'Set start point'}</button>
+      ${bus.start_lat != null ? '<button type="button" class="sj-btn sj-btn-sm" data-clear-start>Remove</button>' : ''}
+    </div>
+    ${editing.stops.length && editing.geometry.length && (editing.start?.[0] ?? null) !== (bus.start_lat ?? null) ? '<div class="sj-note sj-note-warn">The start point changed since this route was calculated. Click “Re-optimise unlocked stops” (or Generate) to update the route and times.</div>' : ''}
+    ${(() => {
+      const tt = tripTimes();
+      if (!tt) return '';
+      return `<div class="sj-note sj-note-info" style="margin-top:0"><b>Trip:</b>
+        ${editing.start ? `driver leaves the start point at <b>${tt.depart}</b> (${km(tt.toFirstM)}, ~${mins(tt.toFirstS)} to the first stop) · ` : ''}first pickup <b>${tt.firstPickup || '—'}</b> ·
+        arrives at school <b>${esc(String(fleet.settings.school_arrival_time).slice(0, 5))}</b>${editing.est_total_s ? ` · total ~${mins(editing.est_total_s)}` : ''}</div>`;
+    })()}
     ${missing.length || extra.length ? `<div class="sj-note sj-note-warn">The families on this bus changed since this route was made
       (${missing.length} not on the route${extra.length ? `, ${extra.length} no longer on the bus` : ''}). Generate or re-optimise, then save.</div>` : ''}
     ${editing.provider === 'straight' ? '<div class="sj-note sj-note-warn">Road routing was unavailable — distances are straight-line estimates. Try "Update road line" again later.</div>' : ''}
@@ -396,7 +409,7 @@ export async function renderRoutes(panel) {
         b.disabled = true;
         await ctx.call(`/admin/routes/${bus.id}`, { method: 'POST', body: {
           stops: editing.stops.map((s) => ({ registration_code: s.code, locked: s.locked, leg_distance_m: s.leg_distance_m, leg_duration_s: s.leg_duration_s, eta_offset_s: s.eta_offset_s })),
-          geometry: editing.geometry, start_lat: bus.start_lat, start_lng: bus.start_lng,
+          geometry: editing.geometry, start_lat: editing.start?.[0] ?? null, start_lng: editing.start?.[1] ?? null,
           total_distance_m: editing.distance_m, total_duration_s: editing.duration_s, est_total_s: editing.est_total_s, provider: editing.provider,
         } });
         editing.dirty = false;
@@ -411,6 +424,27 @@ export async function renderRoutes(panel) {
         return renderRoutes(panel);
       }
       if (b.dataset.sheet !== undefined) return driverSheet(bus, fams);
+      if (b.dataset.setStart !== undefined || b.dataset.clearStart !== undefined) {
+        let start = null;
+        if (b.dataset.setStart !== undefined) {
+          const r = await openPicker({
+            initial: bus.start_lat != null ? { latitude: bus.start_lat, longitude: bus.start_lng, location_source: 'map' } : null,
+            center: { lat: Number(fleet.settings.school_lat), lng: Number(fleet.settings.school_lng) },
+          });
+          if (!r) return;
+          start = { lat: r.latitude, lng: r.longitude };
+        } else if (!confirm(`Remove the start point of ${bus.bus_number}? The trip will start at the first stop.`)) return;
+        await ctx.call(`/admin/buses/${bus.id}`, { method: 'POST', body: { start_lat: start?.lat ?? null, start_lng: start?.lng ?? null } });
+        bus.start_lat = start?.lat ?? null;
+        bus.start_lng = start?.lng ?? null;
+        if (editing.stops.length) {
+          b.disabled = true; b.innerHTML = '<span class="sj-spin"></span> Updating route…';
+          await optimise(bus, onBus, true);
+          await refreshLine(bus, fams);
+        }
+        toast(start ? 'Start point saved — save the draft and approve to publish the new times' : 'Start point removed');
+        return renderRoutes(panel);
+      }
     } catch (err) { toast(err.message, 6000); b.disabled = false; b.textContent = label; }
   };
 }
@@ -421,6 +455,7 @@ function fromSaved(bus, route, status) {
     busId: bus.id, status, dirty: false,
     stops: route.stops.filter((s) => s.registration_code).map((s) => ({ code: s.registration_code, locked: s.locked, leg_distance_m: s.leg_distance_m, leg_duration_s: s.leg_duration_s, eta_offset_s: s.eta_offset_s })),
     geometry: route.geometry || [], distance_m: route.total_distance_m, duration_s: route.total_duration_s, est_total_s: route.est_total_s, provider: route.provider,
+    start: route.start_lat != null ? [Number(route.start_lat), Number(route.start_lng)] : null,
   };
 }
 
@@ -452,11 +487,25 @@ async function refreshLine(bus, fams) {
   const stopLegs = hasDepot ? p.legs.slice(1) : p.legs;
   editing.stops = editing.stops.map((s, i) => ({ ...s, leg_distance_m: stopLegs[i]?.distance_m ?? null, leg_duration_s: stopLegs[i]?.duration_s ?? null, eta_offset_s: offsets[i] }));
   editing.geometry = p.geometry;
+  editing.start = hasDepot ? [bus.start_lat, bus.start_lng] : null;
   editing.distance_m = p.distance_m;
   editing.duration_s = p.duration_s;
   editing.est_total_s = Math.round(p.duration_s * Number(fleet.settings.traffic_factor) + editing.stops.length * fleet.settings.dwell_seconds);
   editing.provider = p.provider;
   editing.dirty = true;
+}
+
+/** Driver's trip: departure from the start point (if set), first pickup, and the drive to the first stop. */
+function tripTimes() {
+  if (!editing?.stops.length || editing.est_total_s == null) return null;
+  const first = editing.stops[0].eta_offset_s;
+  const stopKm = editing.stops.reduce((n, s) => n + (s.leg_distance_m || 0), 0);
+  return {
+    firstPickup: first != null ? etaLabel(first) : null,
+    depart: editing.start ? etaLabel(editing.est_total_s) : (first != null ? etaLabel(first) : null),
+    toFirstM: editing.start && editing.distance_m ? Math.max(0, editing.distance_m - stopKm) : 0,
+    toFirstS: editing.start && first != null ? Math.max(0, editing.est_total_s - first) : 0,
+  };
 }
 
 function etaLabel(offset) {
@@ -489,7 +538,10 @@ function drawRoute(L, fams, bus) {
 }
 
 function renderStopList(el, fams, panel) {
-  el.innerHTML = editing.stops.length ? `<ol style="list-style:none;margin:0;padding:0">${editing.stops.map((s, i) => {
+  const tt = tripTimes();
+  const startRow = editing.start && tt ? `<div class="sj-card" style="padding:8px 10px;margin-bottom:6px;border-color:#15803d"><b style="color:#15803d">Start</b> · driver leaves at <b>${tt.depart}</b><br>
+    <span class="sj-small sj-muted">${km(tt.toFirstM)} · ~${mins(tt.toFirstS)} to stop 1</span></div>` : '';
+  el.innerHTML = editing.stops.length ? `${startRow}<ol style="list-style:none;margin:0;padding:0">${editing.stops.map((s, i) => {
     const f = fams.get(s.code);
     return `<li draggable="true" data-i="${i}" class="sj-card" style="padding:8px 10px;margin-bottom:6px;display:flex;gap:8px;align-items:center;${s.locked ? 'border-color:#101828' : ''}">
       <b style="min-width:26px">${i + 1}</b>
@@ -540,8 +592,10 @@ async function driverSheet(bus, fams) {
       (r.students || []).map((x) => x.name + (x.grade ? ` (${x.grade})` : '')).join(', '), f?.students ?? '', r.area_name || '',
       r.building || '', r.street || '', r.landmark || '', r.pickup_notes || '', f ? googleMapsUrl(f.lat, f.lng) : ''];
   });
+  const tt = tripTimes();
+  if (editing.start && tt) rows.unshift(['Start', tt.depart, 'Leave start point', '', '', '', '', '', '', '', '', `${km(tt.toFirstM)} to stop 1`, googleMapsUrl(editing.start[0], editing.start[1])]);
   const school = [Number(fleet.settings.school_lat), Number(fleet.settings.school_lng)];
-  const pts = [...(bus.start_lat != null ? [[bus.start_lat, bus.start_lng]] : []), ...editing.stops.map((s) => [fams.get(s.code).lat, fams.get(s.code).lng]), school];
+  const pts = [...(editing.start ? [editing.start] : []), ...editing.stops.map((s) => [fams.get(s.code).lat, fams.get(s.code).lng]), school];
   const links = googleDirectionsLinks(pts);
   await downloadExcel(`Driver-sheet-${bus.bus_number.replace(/\W+/g, '-')}-${today()}.xlsx`, [
     {
@@ -553,7 +607,8 @@ async function driverSheet(bus, fams) {
         ['School', String(fleet.settings.school_arrival_time).slice(0, 5), fleet.settings.school_name],
         [],
         ['Bus', bus.bus_number, `Capacity ${bus.capacity}`, `Driver: ${bus.driver_name || '—'} ${bus.driver_phone || ''}`, `Supervisor: ${bus.supervisor_name || '—'} ${bus.supervisor_phone || ''}`],
-        ['Route', editing.status || 'unsaved', editing.distance_m ? km(editing.distance_m) : '', editing.est_total_s ? `about ${mins(editing.est_total_s)}` : ''],
+        ['Route', editing.status || 'unsaved', editing.distance_m ? km(editing.distance_m) : '', editing.est_total_s ? `about ${mins(editing.est_total_s)}` : '',
+          tt ? `${editing.start ? `Leave start ${tt.depart} · ` : ''}First pickup ${tt.firstPickup || '—'} · School ${String(fleet.settings.school_arrival_time).slice(0, 5)}` : ''],
         ...links.map((l, i) => [`Directions ${i + 1}/${links.length}`, l]),
       ],
       widths: [6, 8, 11, 22, 15, 34, 6, 14, 18, 16, 20, 24, 36],
