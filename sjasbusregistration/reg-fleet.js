@@ -526,7 +526,7 @@ export async function renderSettings(panel) {
       <div class="sj-field"><label>Grouping distance for auto-assign (m)</label><input name="cluster_distance_m" type="number" min="100" max="3000" value="${s.cluster_distance_m}"></div>
       <div class="sj-field"><label>Share a bus if groups are within (km)</label><input name="merge_distance_km" type="number" step="0.5" min="0.5" max="30" value="${s.merge_distance_km}"></div>
     </div>
-    <div class="sj-field"><label class="sj-check"><input type="checkbox" name="auto_join_enabled" ${s.auto_join_enabled ? 'checked' : ''}>
+    <div class="sj-field"><label class="sj-check" style="display:flex"><input type="checkbox" name="auto_join_enabled" ${s.auto_join_enabled ? 'checked' : ''}>
       <span>Put new registrations on a nearby bus automatically</span></label>
       <div class="sj-help">When a family registers (or edits before being assigned), it joins the bus whose nearest family is within the distance below — only if that bus has seats for the whole family (spare seats respected). Never over capacity; locked and inactive buses are skipped; families you placed or removed yourself are never re-assigned automatically.</div></div>
     <div class="sj-field"><label>Nearby distance for automatic joining (m)</label><input name="auto_join_max_m" type="number" min="100" max="5000" step="50" value="${s.auto_join_max_m ?? 1000}"></div>
