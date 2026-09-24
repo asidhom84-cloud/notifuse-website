@@ -1,10 +1,10 @@
 // SJAS Bus Registration — admin: fleet, bus assignment, routes, settings, driver sheets.
 
-import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=6';
-import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=6';
-import { hull, PALETTE } from './reg-cluster.js?v=6';
-import { autoAssign, suggestFleet, targetSeats } from './reg-assign.js?v=6';
-import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=6';
+import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=7';
+import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=7';
+import { hull, PALETTE } from './reg-cluster.js?v=7';
+import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=7';
+import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=7';
 
 let ctx = null;          // { call, getRows, openDetail, refreshAll }
 let fleet = null;        // /admin/fleet payload
@@ -28,7 +28,7 @@ const km = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)}
 const mins = (s) => `${Math.round(s / 60)} min`;
 const families = () => ctx.getRows().filter((r) => r.status === 'active').map((r) => ({
   code: r.registration_code, parent: r.parent_name, lat: r.latitude, lng: r.longitude, students: r.student_count,
-  area: r.area_name, has_pin: typeof r.latitude === 'number', row: r,
+  area: r.area_name, area_id: r.area_id, has_pin: typeof r.latitude === 'number', row: r,
 }));
 const assignmentMap = () => new Map(fleet.assignments.map((a) => [a.registration_code, a]));
 function killMap() { if (map) { map.remove(); map = null; } }
@@ -44,7 +44,7 @@ export async function renderBuses(panel) {
   const fams = families();
   const amap = assignmentMap();
   const next = preview ? preview.next : null;
-  const busOf = (code) => (next ? next.get(code)?.bus_id ?? (amap.get(code)?.locked || busById(amap.get(code)?.bus_id)?.assignments_locked ? amap.get(code)?.bus_id : null) : amap.get(code)?.bus_id) || null;
+  const busOf = (code) => (preview?.area ? next.get(code)?.bus_id ?? amap.get(code)?.bus_id : next ? next.get(code)?.bus_id ?? (amap.get(code)?.locked || busById(amap.get(code)?.bus_id)?.assignments_locked ? amap.get(code)?.bus_id : null) : amap.get(code)?.bus_id) || null;
   const assigned = fams.filter((f) => amap.get(f.code));
   const needsReview = fleet.assignments.filter((a) => a.needs_review);
   const lastRun = fleet.runs.find((r) => !r.undone_at);
@@ -61,8 +61,10 @@ export async function renderBuses(panel) {
       return `<div class="rg-cluster" style="--c:${busColor(b.id)};cursor:default;border-style:dashed">
       <b>${esc(b.bus_number)} <span class="sj-badge sj-badge-warn">suggested — not created yet</span></b>
       ${num(students)} / ${num(b.capacity)} students · <b style="display:inline">${num(free)} free</b><br>
-      <span class="sj-small sj-muted">${num(famCount)} families${s?.route_m ? ` · route ~${km(s.route_m)}` : ''}${s?.areas ? ` · ${esc(s.areas)}` : ''}</span>
-      <div class="sj-inline" style="margin-top:6px"><button type="button" class="sj-btn sj-btn-sm" data-show-bus="${esc(b.id)}">Map</button></div></div>`;
+      <span class="sj-small sj-muted">${num(famCount)} families${s?.areas ? ` · ${esc(s.areas)}` : ''}${s?.route_m ? ` · route ~${km(s.route_m)}` : ''}</span>
+      ${s?.far ? `<br><span class="sj-small" style="color:var(--danger)">${num(s.far)} family(ies) far from the others — check their area</span>` : ''}
+      <div class="sj-inline" style="margin-top:6px"><button type="button" class="sj-btn sj-btn-sm sj-btn-primary" data-create-one="${esc(b.id)}">Create this bus</button>
+        <button type="button" class="sj-btn sj-btn-sm" data-show-bus="${esc(b.id)}">Map</button></div></div>`;
     }
     return `<div class="rg-cluster" style="--c:${busColor(b.id)};cursor:default">
       <b>${esc(b.bus_number)}${b.active ? '' : ' <span class="sj-badge">inactive</span>'}${b.assignments_locked ? ' 🔒' : ''}</b>
@@ -83,22 +85,20 @@ export async function renderBuses(panel) {
       ${preview
         ? `<button type="button" class="sj-btn sj-btn-primary" data-apply>Apply ${num(preview.changes.length)} change(s)</button><button type="button" class="sj-btn" data-cancel-preview>Discard preview</button>`
         : `<button type="button" class="sj-btn sj-btn-primary" data-auto ${fleet.buses.some((b) => b.active) ? '' : 'disabled'}>⚙ Auto-assign (preview)</button>
-           <button type="button" class="sj-btn" data-suggest="0">✨ Suggest buses (${num(fleet.settings.default_bus_capacity || 26)} seats each)</button>`}
+           <button type="button" class="sj-btn" data-suggest>✨ Suggest area buses (${num(fleet.settings.default_bus_capacity || 26)} seats each)</button>`}
       ${lastRun && !preview ? `<button type="button" class="sj-btn" data-undo="${esc(lastRun.id)}">↶ Undo last change (${esc(fmtDateTime(lastRun.created_at))})</button>` : ''}
     </div>
-    ${preview?.virtual?.length ? `<div class="sj-note sj-note-info"><b>Suggestion — nothing is saved yet.</b>
-      ${num(preview.virtual.length)} new bus(es) of ${num(preview.virtual[0].capacity)} seats (${preview.virtual.map((v) => esc(v.bus_number)).join(', ')}) would seat
-      ${num(preview.summary.newly_assigned + preview.summary.moved)} families. Rename buses and add drivers after creating them.
-      Applying creates these buses and assigns the families; you can undo the assignment afterwards.
-      Estimated route length (straight-line, before road routing): ${preview.stats.map((st) => `${esc(st.bus_number)} ~${km(st.route_m || 0)}`).join(' · ')}.
-      <div class="sj-inline" style="margin-top:6px">
-        ${preview.extra > 0 ? `<button type="button" class="sj-btn sj-btn-sm" data-suggest="${preview.extra - 1}">− 1 bus</button>` : ''}
-        <button type="button" class="sj-btn sj-btn-sm" data-suggest="${preview.extra + 1}">+ 1 bus</button></div></div>` : ''}
-    ${preview ? `<div class="sj-note sj-note-info"><b>Preview — nothing is saved yet.</b>
+    ${preview?.area ? `<div class="sj-note sj-note-info"><b>Area bus suggestion — nothing is saved yet.</b>
+      One bus per area, not filled up: ${num(preview.virtual.length)} new bus(es)${preview.virtual.length ? ` of ${num(preview.virtual[0].capacity)} seats` : ''}
+      ${preview.stats.some((st) => st.joined) ? `· ${num(preview.stats.reduce((n, st) => n + (st.joined || 0), 0))} families join existing area buses ` : ''}·
+      ${num(preview.summary.newly_assigned)} families placed. Duplicate spellings of the same place (pins close together) share one bus; an area splits only when it passes one bus.
+      Create buses one at a time (“Create this bus”) or all at once (“Apply”). Merging area names in the Areas tab makes this more precise.
+      After creating, new registrations from the same area join that bus automatically.</div>` : ''}
+    ${preview && !preview.area ? `<div class="sj-note sj-note-info"><b>Preview — nothing is saved yet.</b>
       ${num(preview.summary.newly_assigned)} newly assigned · ${num(preview.summary.moved)} moved · ${num(preview.summary.unassigned)} unassigned (${num(preview.summary.unassigned_students)} students).
       Locked families and locked buses are unchanged. No bus goes over its capacity.</div>` : ''}
     ${ctx.openDuplicatePairs() ? `<div class="sj-note sj-note-warn">${ctx.openDuplicatePairs()} possible duplicate registration(s) are unresolved — they may use seats twice. Review them in the Duplicates tab first.</div>` : ''}
-    <p class="sj-help" style="margin-top:0">${fleet.settings.auto_join_enabled ? `New registrations join a nearby bus automatically (within ${num(fleet.settings.auto_join_max_m)} m, seats permitting). ` : 'Automatic joining is off. '}${num(assigned.length)} of ${num(fams.length)} families assigned · ${num(fams.filter((f) => !f.has_pin).length)} without a pin · spare seats ${pct}% · clustering ${fleet.settings.cluster_distance_m} m</p>
+    <p class="sj-help" style="margin-top:0">${fleet.settings.auto_join_enabled ? `New registrations join a nearby bus automatically (a family within ${num(fleet.settings.auto_join_max_m)} m, or their area's bus within ${num(fleet.settings.auto_join_area_max_m)} m; seats permitting). ` : 'Automatic joining is off. '}${num(assigned.length)} of ${num(fams.length)} families assigned · ${num(fams.filter((f) => !f.has_pin).length)} without a pin · spare seats ${pct}% · clustering ${fleet.settings.cluster_distance_m} m</p>
     <div class="rg-clusters">${allBuses().map(card).join('') || '<div class="sj-empty">No buses yet. Add your fleet first.</div>'}</div>
     <div class="rg-maptools" style="margin-top:14px">
       <label>Show <select data-busfilter><option value="all">All buses</option><option value="none">Unassigned only</option>
@@ -179,17 +179,22 @@ export async function renderBuses(panel) {
         return renderBuses(panel);
       }
       if (b.dataset.suggest !== undefined) {
-        const capacity = Number(fleet.settings.default_bus_capacity) || 26;
-        const school = { lat: Number(fleet.settings.school_lat), lng: Number(fleet.settings.school_lng) };
-        preview = suggestFleet({ families: fams, buses: fleet.buses, current: new Map(fleet.assignments.map((a) => [a.registration_code, a])), settings: fleet.settings, capacity, school, extra: Number(b.dataset.suggest) || 0 });
-        const areaOf = new Map(fams.map((f) => [f.code, f.area]));
-        for (const st of preview.stats) {
-          const counts = new Map();
-          for (const [code, n] of preview.next) if (n.bus_id === st.bus_id) counts.set(areaOf.get(code), (counts.get(areaOf.get(code)) || 0) + 1);
-          st.areas = [...counts].sort((x, y) => y[1] - x[1]).slice(0, 3).map(([a, c]) => `${a} ${c}`).join(', ');
-        }
-        if (!preview.changes.length) { preview = null; toast('Nothing to suggest — every family with a pin already has a seat.'); }
+        preview = makeAreaSuggestion();
+        if (!preview.changes.length) { preview = null; toast('Nothing to suggest — every family with a pin already has a bus.'); }
         ui.bus = 'all';
+        return renderBuses(panel);
+      }
+      if (b.dataset.createOne) {
+        const v = preview.virtual.find((x) => x.id === b.dataset.createOne);
+        const changes = preview.changes.filter((c) => c.bus_id === v.id);
+        if (!confirm(`Create ${v.bus_number} (${v.capacity} seats) and assign its ${changes.length} families?`)) return;
+        b.disabled = true;
+        const r = await ctx.call('/admin/buses', { method: 'POST', body: { bus_number: v.bus_number, capacity: v.capacity } });
+        await ctx.call('/admin/assignments/apply', { method: 'POST', body: { kind: 'auto', changes: changes.map((c) => ({ ...c, bus_id: r.id })), params: fleet.settings, summary: { area_bus: v.bus_number, newly_assigned: changes.length } } });
+        toast(`${v.bus_number} created`);
+        await loadFleet();
+        preview = makeAreaSuggestion();
+        if (!preview.changes.length) preview = null;
         return renderBuses(panel);
       }
       if (b.dataset.cancelPreview !== undefined) { preview = null; ui.bus = 'all'; return renderBuses(panel); }
@@ -217,6 +222,15 @@ export async function renderBuses(panel) {
     } catch (err) { toast(err.message, 5000); b.disabled = false; }
   };
   sel.addEventListener('change', () => { ui.bus = sel.value; renderBuses(panel); });
+
+  function makeAreaSuggestion() {
+    return suggestAreaBuses({
+      families: families(), buses: fleet.buses, current: assignmentMap(), settings: fleet.settings,
+      capacity: Number(fleet.settings.default_bus_capacity) || 26,
+      school: { lat: Number(fleet.settings.school_lat), lng: Number(fleet.settings.school_lng) },
+      areaMaxM: fleet.settings.auto_join_area_max_m || 5000,
+    });
+  }
 
   async function manualChange(code, busId, locked) {
     const body = { kind: 'manual', changes: [{ registration_code: code, bus_id: busId, locked: busId ? locked : false, reason: 'Manual', source: 'manual' }] };
@@ -571,8 +585,11 @@ export async function renderSettings(panel) {
     </div>
     <div class="sj-field"><label class="sj-check" style="display:flex"><input type="checkbox" name="auto_join_enabled" ${s.auto_join_enabled ? 'checked' : ''}>
       <span>Put new registrations on a nearby bus automatically</span></label>
-      <div class="sj-help">When a family registers (or edits before being assigned), it joins the bus whose nearest family is within the distance below — only if that bus has seats for the whole family (spare seats respected). Never over capacity; locked and inactive buses are skipped; families you placed or removed yourself are never re-assigned automatically.</div></div>
-    <div class="sj-field"><label>Nearby distance for automatic joining (m)</label><input name="auto_join_max_m" type="number" min="100" max="5000" step="50" value="${s.auto_join_max_m ?? 1000}"></div>
+      <div class="sj-help">When a family registers (or edits before being assigned), it joins a bus that has a family close by, or else the bus serving its area (the most common area among that bus's families) if it is within the second distance — only if that bus has seats for the whole family (spare seats respected). Never over capacity; locked and inactive buses are skipped; families you placed or removed yourself are never re-assigned automatically.</div></div>
+    <div class="sj-row">
+      <div class="sj-field"><label>Join any bus with a family within (m)</label><input name="auto_join_max_m" type="number" min="100" max="5000" step="50" value="${s.auto_join_max_m ?? 1000}"></div>
+      <div class="sj-field"><label>Join the bus serving the family's area within (m, 0 = off)</label><input name="auto_join_area_max_m" type="number" min="0" max="20000" step="500" value="${s.auto_join_area_max_m ?? 5000}"></div>
+    </div>
     <div class="sj-field"><label>Routing service</label><select name="routing_provider">
       <option value="valhalla">Valhalla (OpenStreetMap, free public server)</option>
       <option value="osrm">OSRM (OpenStreetMap, free public server)</option>
