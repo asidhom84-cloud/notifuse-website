@@ -1,8 +1,8 @@
 // SJAS Bus Registration — the registration form (parent create/edit + admin edit).
 
-import { esc, matchArea } from './reg-common.js?v=12';
-import { t } from './reg-i18n.js?v=12';
-import { openPicker, renderPreview } from './reg-map.js?v=12';
+import { esc, matchArea } from './reg-common.js?v=13';
+import { t } from './reg-i18n.js?v=13';
+import { openPicker, renderPreview } from './reg-map.js?v=13';
 
 const NEW_AREA = '__new__';
 

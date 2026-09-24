@@ -1,5 +1,6 @@
 // SJAS Bus Registration — English / Arabic strings. Keys are the English text,
-// so t('Text') returns it unchanged in English. The admin page stays English.
+// so t('Text') returns it unchanged in English. The admin page adds its own strings
+// (reg-admin-i18n.js) through addStrings().
 
 const AR = {
   // Shell / gate
@@ -229,8 +230,12 @@ const AR = {
   'Area is required': 'المنطقة مطلوبة',
 };
 
-const STORE_KEY = 'busreg.lang';
+let storeKey = 'busreg.lang';
 let lang = 'en';
+let titleKey = 'SJAS Bus Registration';
+
+/** Extra Arabic strings (admin page). */
+export function addStrings(dict) { Object.assign(AR, dict); }
 
 export const getLang = () => lang;
 export const isRtl = () => lang === 'ar';
@@ -244,20 +249,22 @@ export function t(key, vars) {
 function apply() {
   document.documentElement.lang = lang;
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  document.title = t('SJAS Bus Registration');
+  document.title = t(titleKey);
   document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
 }
 
-/** Parent page only: saved choice, else the phone's language. */
-export function initLang() {
+/** Saved choice, else the device language. The admin page keeps its own choice and title. */
+export function initLang({ key = 'busreg.lang', title = 'SJAS Bus Registration' } = {}) {
+  storeKey = key;
+  titleKey = title;
   let saved = null;
-  try { saved = localStorage.getItem(STORE_KEY); } catch { /* ignore */ }
+  try { saved = localStorage.getItem(storeKey); } catch { /* ignore */ }
   lang = saved === 'ar' || saved === 'en' ? saved : (navigator.language || '').toLowerCase().startsWith('ar') ? 'ar' : 'en';
   apply();
 }
 
 export function setLang(next) {
   lang = next === 'ar' ? 'ar' : 'en';
-  try { localStorage.setItem(STORE_KEY, lang); } catch { /* ignore */ }
+  try { localStorage.setItem(storeKey, lang); } catch { /* ignore */ }
   apply();
 }

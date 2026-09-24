@@ -15,16 +15,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/sjasbusregistration/reg.css?v=12" />
+  <link rel="stylesheet" href="/sjasbusregistration/reg.css?v=13" />
 </head>
 <body class="sj-admin">
   <header class="sj-topbar">
     <div class="sj-wrap">
       <a class="sj-brand" href="/sjasbusregistration/admin/" aria-label="Admin home">
         <img src="/assets/brand/noti-family-logo.jpg" alt="" width="36" height="36" />
-        <div><b>SJAS Bus Registration</b><span>Administrator</span></div>
+        <div><b data-i18n="SJAS Bus Registration">SJAS Bus Registration</b><span data-i18n="Administrator">Administrator</span></div>
       </a>
       <span class="sj-spacer"></span>
+      <button type="button" class="sj-btn sj-btn-sm sj-langbtn" id="rg-lang">العربية</button>
       <button type="button" class="sj-btn sj-btn-ghost sj-btn-sm" id="rg-signout" data-i18n="Sign out" hidden>Sign out</button>
     </div>
   </header>
@@ -33,9 +34,9 @@
     <div class="sj-loading">Loading…</div>
   </main>
 
-  <footer class="sj-foot">Powered by NotiFamily</footer>
+  <footer class="sj-foot" data-i18n="Powered by NotiFamily">Powered by NotiFamily</footer>
 
   <noscript><p class="sj-wrap">Please enable JavaScript to use this page.</p></noscript>
-  <script type="module" src="/sjasbusregistration/reg-admin.js?v=12"></script>
+  <script type="module" src="/sjasbusregistration/reg-admin.js?v=13"></script>
 </body>
 </html>
