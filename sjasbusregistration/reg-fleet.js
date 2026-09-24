@@ -1,10 +1,10 @@
 // SJAS Bus Registration — admin: fleet, bus assignment, routes, settings, driver sheets.
 
-import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=8';
-import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=8';
-import { hull, PALETTE } from './reg-cluster.js?v=8';
-import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=8';
-import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=8';
+import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=9';
+import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=9';
+import { hull, PALETTE } from './reg-cluster.js?v=9';
+import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=9';
+import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=9';
 
 let ctx = null;          // { call, getRows, openDetail, refreshAll }
 let fleet = null;        // /admin/fleet payload
@@ -599,10 +599,10 @@ export async function renderSettings(panel) {
       <div class="sj-field"><label>Join the bus serving the family's area within (m, 0 = off)</label><input name="auto_join_area_max_m" type="number" min="0" max="20000" step="500" value="${s.auto_join_area_max_m ?? 5000}"></div>
     </div>
     <div class="sj-field"><label>Routing service</label><select name="routing_provider">
-      <option value="valhalla">Valhalla (OpenStreetMap, free public server)</option>
-      <option value="osrm">OSRM (OpenStreetMap, free public server)</option>
+      <option value="osrm">OSRM (recommended — realistic Cairo driving times)</option>
+      <option value="valhalla">Valhalla (estimates slow speeds in Cairo — times come out too long)</option>
       <option value="straight">Straight-line estimate only (no external service)</option></select>
-      <div class="sj-help">Only coordinates are sent, through the server — never names, phones or IDs. If the chosen service fails, the other is tried automatically.</div></div>
+      <div class="sj-help">Road times are for empty roads; the traffic factor above adds morning traffic (with OSRM, about 1.2–1.4 is typical). Only coordinates are sent, through the server — never names, phones or IDs. If the chosen service fails, the other is tried automatically.</div></div>
     <div class="sj-formfoot"><button type="submit" class="sj-btn sj-btn-primary">Save settings</button></div></form>`;
   const form = panel.querySelector('form');
   form.routing_provider.value = s.routing_provider;

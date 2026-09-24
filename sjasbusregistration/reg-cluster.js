@@ -7,7 +7,7 @@
 // Nothing is stored; changing the distance simply recomputes. Deterministic:
 // points are processed in registration-number order.
 
-import { distanceM } from './reg-common.js?v=8';
+import { distanceM } from './reg-common.js?v=9';
 
 /** points: [{ lat, lng, ...}] → labels: cluster index (0..k-1) or -1 for isolated. */
 export function dbscan(points, epsM = 500, minFamilies = 3) {
