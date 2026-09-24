@@ -393,6 +393,8 @@ html[lang="ar"] .sj-table thead th, html[lang="ar"] .sj-totalbar .k { letter-spa
 .rg-picker-actions { display: flex; gap: 8px; }
 .rg-picker-actions .sj-btn { flex: 1; }
 .rg-map, .rg-preview, .rg-adminmap { direction: ltr; }
+/* Keep Leaflet's internal layers (z-index up to 1000) inside the map so pop-ups and menus stay on top. */
+.leaflet-container { isolation: isolate; z-index: 0; }
 
 /* Pins */
 .rg-pin { width: 34px; height: 34px; }

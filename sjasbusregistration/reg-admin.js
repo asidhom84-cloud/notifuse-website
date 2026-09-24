@@ -4,13 +4,13 @@
 import {
   api, appleMapsUrl, copyText, downloadExcel, esc, fmtDate, fmtDateTime, googleMapsUrl, num,
   openModal, session, toast, today, tokenFrom,
-} from './reg-common.js?v=15';
-import { registrationForm } from './reg-form.js?v=15';
-import { addTiles, loadMarkerCluster, renderPreview } from './reg-map.js?v=15';
-import { hull, summarise } from './reg-cluster.js?v=15';
-import { cleanupFleet, initFleet, renderBuses, renderRoutes, renderSettings } from './reg-fleet.js?v=15';
-import { getLang, initLang, setLang, t } from './reg-i18n.js?v=15';
-import './reg-admin-i18n.js?v=15';
+} from './reg-common.js?v=16';
+import { registrationForm } from './reg-form.js?v=16';
+import { addTiles, loadMarkerCluster, renderPreview } from './reg-map.js?v=16';
+import { hull, summarise } from './reg-cluster.js?v=16';
+import { cleanupFleet, initFleet, renderBuses, renderRoutes, renderSettings } from './reg-fleet.js?v=16';
+import { getLang, initLang, setLang, t } from './reg-i18n.js?v=16';
+import './reg-admin-i18n.js?v=16';
 
 const ADMIN_KEY = 'busreg.admin';
 const app = document.getElementById('rg-app');
