@@ -1,10 +1,10 @@
 // SJAS Bus Registration — admin: fleet, bus assignment, routes, settings, driver sheets.
 
-import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=7';
-import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=7';
-import { hull, PALETTE } from './reg-cluster.js?v=7';
-import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=7';
-import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=7';
+import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=8';
+import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=8';
+import { hull, PALETTE } from './reg-cluster.js?v=8';
+import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=8';
+import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=8';
 
 let ctx = null;          // { call, getRows, openDetail, refreshAll }
 let fleet = null;        // /admin/fleet payload
@@ -291,8 +291,16 @@ function busDialog(bus) {
   });
   body.querySelector('[data-clear-start]').addEventListener('click', () => { start = null; body.querySelector('[data-start]').textContent = 'Not set'; });
   body.querySelector('[data-del]')?.addEventListener('click', async () => {
-    if (!confirm(`Delete ${bus.bus_number}? Only possible when no family is assigned to it.`)) return;
-    try { await ctx.call(`/admin/buses/${bus.id}`, { method: 'POST', body: { action: 'delete' } }); modal.close(); ctx.switchTab('buses'); } catch (e) { toast(e.message, 5000); }
+    const n = bus.families || 0;
+    if (!confirm(n
+      ? `Delete ${bus.bus_number}?\n\nIts ${n} famil${n === 1 ? 'y goes' : 'ies go'} back to "not assigned" (they can join another bus automatically or be placed by you). Its routes are deleted too.`
+      : `Delete ${bus.bus_number}?`)) return;
+    try {
+      const r = await ctx.call(`/admin/buses/${bus.id}`, { method: 'POST', body: { action: 'delete', unassign: true } });
+      modal.close();
+      toast(r.unassigned ? `${bus.bus_number} deleted · ${r.unassigned} famil${r.unassigned === 1 ? 'y' : 'ies'} unassigned` : `${bus.bus_number} deleted`);
+      ctx.switchTab('buses');
+    } catch (e) { toast(e.message, 5000); }
   });
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
