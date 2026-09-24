@@ -1,7 +1,7 @@
 // SJAS Bus Registration — Arabic strings for the administrator page.
 // Keys are the English text used in reg-admin.js / reg-fleet.js; {placeholders} stay as they are.
 
-import { addStrings } from './reg-i18n.js?v=14';
+import { addStrings } from './reg-i18n.js?v=15';
 
 addStrings({
   // Shell, sign-in, dashboard
@@ -349,6 +349,7 @@ addStrings({
   'All families (moves them from their bus)': 'كل الأسر (ينقلها من باصها الحالي)',
   "Families from this bus's area and nearest pickup points are listed first.": 'تظهر أولاً أسر منطقة هذا الباص وأقرب أماكن الركوب.',
   'Current bus': 'الباص الحالي',
+  'Select all from this area ({n})': 'تحديد كل أسر هذه المنطقة ({n})',
   'same area': 'نفس المنطقة',
   'No families match.': 'لا توجد أسر مطابقة.',
   'Lock them on this bus (auto-assign will not move them)': 'تثبيتها على هذا الباص (التوزيع التلقائي لن ينقلها)',

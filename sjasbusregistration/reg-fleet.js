@@ -1,11 +1,11 @@
 // SJAS Bus Registration — admin: fleet, bus assignment, routes, settings, driver sheets.
 
-import { appleMapsUrl, distanceM, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=14';
-import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=14';
-import { hull, PALETTE } from './reg-cluster.js?v=14';
-import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=14';
-import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=14';
-import { t } from './reg-i18n.js?v=14';
+import { appleMapsUrl, distanceM, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=15';
+import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=15';
+import { hull, PALETTE } from './reg-cluster.js?v=15';
+import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=15';
+import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=15';
+import { t } from './reg-i18n.js?v=15';
 
 let ctx = null;          // { call, getRows, openDetail, refreshAll }
 let fleet = null;        // /admin/fleet payload
@@ -333,7 +333,8 @@ function familiesDialog(bus, onDone) {
           <input class="sj-input" data-q placeholder="${tt('Search ID, parent or area')}" value="${esc(state.q)}" style="flex:1;min-width:180px">
           <select data-show><option value="unassigned">${tt('Families without a bus')}</option><option value="all">${tt('All families (moves them from their bus)')}</option></select>
         </div>
-        <p class="sj-help" style="margin-top:4px">${tt("Families from this bus's area and nearest pickup points are listed first.")}</p>
+        <p class="sj-help" style="margin-top:4px">${tt("Families from this bus's area and nearest pickup points are listed first.")}
+          ${candidates.some((c) => c.same) ? `<button type="button" class="sj-btn sj-btn-sm" data-pick-area>${tt('Select all from this area ({n})', { n: candidates.filter((c) => c.same).length })}</button>` : ''}</p>
         <div class="sj-tablewrap" style="max-height:45vh;overflow:auto"><table class="sj-table">
           <thead><tr><th></th><th>${tt('ID')}</th><th>${tt('Parent')}</th><th>${tt('Students')}</th><th>${tt('Area')}</th><th>${tt('Distance')}</th><th>${tt('Current bus')}</th></tr></thead>
           <tbody>${candidates.map(({ f, same, d }) => `<tr class="sj-clickable" data-pick="${esc(f.code)}">
@@ -371,6 +372,10 @@ function familiesDialog(bus, onDone) {
   };
 
   body.onclick = async (e) => {
+    if (e.target.closest('[data-pick-area]')) {
+      all.filter((f) => amap.get(f.code)?.bus_id !== bus.id && (state.show === 'all' || !amap.get(f.code)) && sameArea(f)).forEach((f) => state.picked.add(f.code));
+      return draw();
+    }
     const row = e.target.closest('[data-pick]');
     if (row && !e.target.closest('button')) {
       const code = row.dataset.pick;
