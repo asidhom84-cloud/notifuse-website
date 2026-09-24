@@ -1,10 +1,10 @@
 // SJAS Bus Registration — admin: fleet, bus assignment, routes, settings, driver sheets.
 
-import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=4';
-import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=4';
-import { hull, PALETTE } from './reg-cluster.js?v=4';
-import { autoAssign, targetSeats } from './reg-assign.js?v=4';
-import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=4';
+import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=5';
+import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=5';
+import { hull, PALETTE } from './reg-cluster.js?v=5';
+import { autoAssign, targetSeats } from './reg-assign.js?v=5';
+import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=5';
 
 let ctx = null;          // { call, getRows, openDetail, refreshAll }
 let fleet = null;        // /admin/fleet payload
@@ -80,7 +80,7 @@ export async function renderBuses(panel) {
       ${num(preview.summary.newly_assigned)} newly assigned · ${num(preview.summary.moved)} moved · ${num(preview.summary.unassigned)} unassigned (${num(preview.summary.unassigned_students)} students).
       Locked families and locked buses are unchanged. No bus goes over its capacity.</div>` : ''}
     ${ctx.openDuplicatePairs() ? `<div class="sj-note sj-note-warn">${ctx.openDuplicatePairs()} possible duplicate registration(s) are unresolved — they may use seats twice. Review them in the Duplicates tab first.</div>` : ''}
-    <p class="sj-help" style="margin-top:0">${num(assigned.length)} of ${num(fams.length)} families assigned · ${num(fams.filter((f) => !f.has_pin).length)} without a pin · spare seats ${pct}% · clustering ${fleet.settings.cluster_distance_m} m</p>
+    <p class="sj-help" style="margin-top:0">${fleet.settings.auto_join_enabled ? `New registrations join a nearby bus automatically (within ${num(fleet.settings.auto_join_max_m)} m, seats permitting). ` : 'Automatic joining is off. '}${num(assigned.length)} of ${num(fams.length)} families assigned · ${num(fams.filter((f) => !f.has_pin).length)} without a pin · spare seats ${pct}% · clustering ${fleet.settings.cluster_distance_m} m</p>
     <div class="rg-clusters">${fleet.buses.map(card).join('') || '<div class="sj-empty">No buses yet. Add your fleet first.</div>'}</div>
     <div class="rg-maptools" style="margin-top:14px">
       <label>Show <select data-busfilter><option value="all">All buses</option><option value="none">Unassigned only</option>
@@ -526,6 +526,10 @@ export async function renderSettings(panel) {
       <div class="sj-field"><label>Grouping distance for auto-assign (m)</label><input name="cluster_distance_m" type="number" min="100" max="3000" value="${s.cluster_distance_m}"></div>
       <div class="sj-field"><label>Share a bus if groups are within (km)</label><input name="merge_distance_km" type="number" step="0.5" min="0.5" max="30" value="${s.merge_distance_km}"></div>
     </div>
+    <div class="sj-field"><label class="sj-check"><input type="checkbox" name="auto_join_enabled" ${s.auto_join_enabled ? 'checked' : ''}>
+      <span>Put new registrations on a nearby bus automatically</span></label>
+      <div class="sj-help">When a family registers (or edits before being assigned), it joins the bus whose nearest family is within the distance below — only if that bus has seats for the whole family (spare seats respected). Never over capacity; locked and inactive buses are skipped; families you placed or removed yourself are never re-assigned automatically.</div></div>
+    <div class="sj-field"><label>Nearby distance for automatic joining (m)</label><input name="auto_join_max_m" type="number" min="100" max="5000" step="50" value="${s.auto_join_max_m ?? 1000}"></div>
     <div class="sj-field"><label>Routing service</label><select name="routing_provider">
       <option value="valhalla">Valhalla (OpenStreetMap, free public server)</option>
       <option value="osrm">OSRM (OpenStreetMap, free public server)</option>
@@ -557,7 +561,7 @@ export async function renderSettings(panel) {
     e.preventDefault();
     const fd = Object.fromEntries(new FormData(form));
     try {
-      await ctx.call('/admin/settings', { method: 'POST', body: { ...fd, school_lat: school.lat, school_lng: school.lng } });
+      await ctx.call('/admin/settings', { method: 'POST', body: { ...fd, auto_join_enabled: form.auto_join_enabled.checked, school_lat: school.lat, school_lng: school.lng } });
       toast('Settings saved');
     } catch (err) { toast(err.message, 5000); }
   });

@@ -5,10 +5,10 @@
 //               family chose to share them. The server decides the bus from the
 //               PIN-verified session; the page can never ask for another bus.
 
-import { api, ApiError, copyText, esc, fmtDate, local, num, session, toast, tokenFrom } from './reg-common.js?v=4';
-import { registrationForm } from './reg-form.js?v=4';
-import { getLang, initLang, setLang, t } from './reg-i18n.js?v=4';
-import { renderDemandMap, renderMyBusRoute } from './reg-mybus.js?v=4';
+import { api, ApiError, copyText, esc, fmtDate, local, num, session, toast, tokenFrom } from './reg-common.js?v=5';
+import { registrationForm } from './reg-form.js?v=5';
+import { getLang, initLang, setLang, t } from './reg-i18n.js?v=5';
+import { renderDemandMap, renderMyBusRoute } from './reg-mybus.js?v=5';
 
 const VIEWER_KEY = 'busreg.viewer';
 const EDITOR_KEY = 'busreg.editor'; // 45 min, can edit (sessionStorage)
@@ -189,6 +189,7 @@ function renderSaved(res) {
         <div><span>${esc(t('Registration ID'))}</span><b>${esc(res.registration_code)}</b></div>
         <div><span>${esc(t('Private Edit PIN'))}</span><b>${esc(res.pin)}</b></div>
       </div>
+      ${res.bus ? `<div class="sj-note sj-note-info" style="text-align:start">${esc(t('You have been placed on bus {bus}, near other registered families. The school may still adjust bus assignments.', { bus: res.bus }))}</div>` : ''}
       <div class="sj-note sj-note-warn" style="text-align:start">${esc(t('Keep these details safe if you need to update your registration later. The PIN will not be shown again.'))}</div>
       <div class="sj-formfoot" style="justify-content:center">
         <button type="button" class="sj-btn" data-copy>${esc(t('Copy details'))}</button>
@@ -258,6 +259,7 @@ function statusCard(me) {
   let routeHtml = '';
   if (bus) {
     if (!r || r.state === 'preparing') routeHtml = `<b>${esc(t('Being prepared'))}</b>`;
+    else if (r.state === 'being_added') routeHtml = `<b>${esc(t('Being added to the route'))}</b><br><span class="sj-muted">${esc(t('Your family has been placed on this bus. Your stop will be added when the route is next updated.'))}</span>`;
     else if (r.state === 'needs_review') routeHtml = `<b>${esc(t('Needs review'))}</b><br><span class="sj-muted">${esc(t('Your pickup point changed after bus assignment. The administrator will update your bus or route.'))}</span>`;
     else routeHtml = `<b>${esc(t('Approved'))}</b><br>${esc(t('Your stop: {n} of {total}', { n: r.my_stop, total: r.stops_total }))}${r.eta ? `<br>${esc(t('Estimated pickup {time}', { time: r.eta }))}` : ''}
       <br><a class="sj-btn sj-btn-sm sj-btn-primary" style="margin-top:8px" href="#mybus">🗺 ${esc(t('View my bus route'))}</a>`;
@@ -316,7 +318,8 @@ async function renderMyBus() {
   const back = `<div style="padding:16px 0"><a href="#status" class="sj-linkbtn">${esc(t('← Back'))}</a></div>`;
   if (r.state !== 'approved') {
     app.innerHTML = `${back}<div class="sj-card sj-formcard"><h2>${esc(t('My bus route'))}</h2>
-      <p>${esc(r.state === 'not_assigned' ? t('Bus assignments are still being prepared.') : r.state === 'needs_review'
+      <p>${esc(r.state === 'not_assigned' ? t('Bus assignments are still being prepared.') : r.state === 'being_added'
+        ? t('Your family has been placed on this bus. Your stop will be added when the route is next updated.') : r.state === 'needs_review'
         ? t('Your pickup point changed after bus assignment. The administrator will update your bus or route.') : t('Your bus route is being prepared.'))}</p></div>`;
     return;
   }
