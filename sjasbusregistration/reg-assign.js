@@ -8,8 +8,9 @@
 // filled to their TARGET seats (capacity − spare seats) and NEVER beyond capacity.
 // Locked families and locked buses are never touched. Nothing is saved here.
 
-import { distanceM } from './reg-common.js?v=5';
-import { dbscan, clusterName } from './reg-cluster.js?v=5';
+import { distanceM } from './reg-common.js?v=6';
+import { dbscan, clusterName } from './reg-cluster.js?v=6';
+import { orderStops } from './reg-route.js?v=6';
 
 export const targetSeats = (bus, pct) => Math.max(0, bus.capacity - (bus.reserve_seats ?? Math.ceil((bus.capacity * (pct || 0)) / 100)));
 
@@ -172,4 +173,113 @@ export function autoAssign({ families, buses, current, settings }) {
     over_capacity: stats.filter((s) => s.students > s.capacity).length, // always 0 by construction
   };
   return { next, changes, unassigned, stats, summary };
+}
+
+/** Estimated morning route length (m): straight-line legs, stops ordered by the route optimiser. */
+export function routeLengthM(fams, school) {
+  if (!fams.length) return 0;
+  const pts = [...fams, school];
+  const d = pts.map((a) => pts.map((b) => distanceM(a.lat, a.lng, b.lat, b.lng)));
+  const order = orderStops(d, fams.length);
+  let m = d[order[order.length - 1]][fams.length];
+  for (let i = 0; i < order.length - 1; i++) m += d[order[i]][order[i + 1]];
+  return m;
+}
+
+/**
+ * Sweep partition for a NEW fleet: families sorted by direction from the school and
+ * cut into exactly k consecutive slices (≤ seats each, families never split). Every start
+ * direction and fill level is tried; the split with the shortest estimated routes
+ * (total + half the longest, so one bus doesn't get a very long ride) wins.
+ */
+function sweepPartition(fams, k, seats, school) {
+  const kx = 111320 * Math.cos((school.lat * Math.PI) / 180);
+  const ang = (f) => Math.atan2((f.lat - school.lat) * 110540, (f.lng - school.lng) * kx);
+  const sorted = [...fams].sort((a, b) => ang(a) - ang(b) || byCode(a, b));
+  const total = weight(sorted);
+  const cache = new Map();
+  const len = (g) => {
+    const key = g.map((f) => f.code).join(',');
+    if (!cache.has(key)) cache.set(key, routeLengthM(g, school));
+    return cache.get(key);
+  };
+  let best = null;
+  for (let thr = Math.ceil(total / k); thr <= seats; thr++) {
+    for (let s = 0; s < sorted.length; s++) {
+      const groups = [];
+      let cur = [], w = 0;
+      for (const f of [...sorted.slice(s), ...sorted.slice(0, s)]) {
+        if (cur.length && w + f.students > thr) { groups.push(cur); cur = []; w = 0; }
+        cur.push(f);
+        w += f.students;
+      }
+      if (cur.length) groups.push(cur);
+      if (groups.length !== k || groups.some((g) => weight(g) > seats)) continue;
+      const lens = groups.map(len);
+      const cost = lens.reduce((a, b) => a + b, 0) + 0.5 * Math.max(...lens);
+      if (!best || cost < best.cost - 1e-6) best = { cost, groups, lens };
+    }
+  }
+  return best;
+}
+
+/**
+ * Fleet suggestion: as few NEW buses of `capacity` seats as needed so every family
+ * with a pickup pin gets a seat (or `extra` more/fewer, for comparison). New buses
+ * are virtual (id "new:N", named "Bus N" with numbers not already used) until the
+ * admin creates them. With no buses yet, families are split by direction around the
+ * school (sweep); otherwise the normal auto-assignment runs with the extra buses.
+ * Nothing is saved here.
+ */
+export function suggestFleet({ families, buses, current, settings, capacity, school, extra = 0, maxExtra = 8 }) {
+  const key = (s) => String(s).toLowerCase().replace(/\s+/g, '');
+  const taken = new Set(buses.map((b) => key(b.bus_number)));
+  const names = [];
+  for (let n = 1; names.length < 100; n++) if (!taken.has(key(`Bus ${n}`))) names.push(`Bus ${n}`);
+  const pct = settings.default_reserve_pct || 0;
+  const seats = targetSeats({ capacity, reserve_seats: null }, pct);
+  const pinned = families.filter((f) => f.has_pin);
+  const makeVirtual = (k) => names.slice(0, k).map((bus_number, i) => ({ id: `new:${i + 1}`, bus_number, capacity, reserve_seats: null, active: true, assignments_locked: false, virtual: true }));
+  let res = null, virtual = [];
+
+  if (!buses.some((b) => b.active) && !current.size && pinned.length && seats > 0) {
+    const kMin = Math.max(1, Math.ceil(weight(pinned) / seats));
+    let part = null, k = Math.max(1, kMin + extra);
+    for (; k <= kMin + extra + maxExtra && !(part = sweepPartition(pinned, k, seats, school)); k++);
+    if (part) {
+      virtual = makeVirtual(part.groups.length);
+      const next = new Map();
+      const stats = part.groups.map((g, i) => {
+        g.forEach((f) => next.set(f.code, { bus_id: virtual[i].id, reason: 'Suggested: same direction from school' }));
+        const c = centroid(g);
+        const ds = g.map((f) => distanceM(c.lat, c.lng, f.lat, f.lng)).sort((a, b) => a - b);
+        return {
+          bus_id: virtual[i].id, bus_number: virtual[i].bus_number, capacity, target: seats, families: g.length, students: weight(g),
+          free: capacity - weight(g), spread_max_m: Math.round(ds[ds.length - 1]), spread_p90_m: Math.round(ds[Math.min(ds.length - 1, Math.floor(ds.length * 0.9))]),
+          route_m: Math.round(part.lens[i]), locked: false,
+        };
+      });
+      const unassigned = families.filter((f) => !f.has_pin).map((f) => ({ ...f, reason: 'No pickup pin' }));
+      const changes = pinned.map((f) => ({ registration_code: f.code, bus_id: next.get(f.code).bus_id, reason: next.get(f.code).reason, source: 'auto', locked: false }));
+      res = { next, changes, unassigned, stats, summary: { moved: 0, newly_assigned: changes.length, unassigned: unassigned.length, unassigned_students: weight(unassigned), over_capacity: 0 } };
+    }
+  }
+  if (!res) {
+    const existing = buses.filter((b) => b.active && !b.assignments_locked).reduce((n, b) => n + targetSeats(b, pct), 0);
+    const k0 = Math.max(0, Math.ceil((weight(pinned) - existing) / Math.max(1, seats)) + extra);
+    for (let k = k0; k <= Math.min(names.length, k0 + maxExtra); k++) {
+      virtual = makeVirtual(k);
+      res = autoAssign({ families, buses: [...buses, ...virtual], current, settings });
+      if (!res.unassigned.some((u) => u.reason === 'No bus has enough free seats')) break;
+    }
+    for (const st of res.stats) {
+      const g = [...res.next].filter(([, n]) => n.bus_id === st.bus_id).map(([code]) => families.find((f) => f.code === code));
+      st.route_m = Math.round(routeLengthM(g, school));
+    }
+  }
+  const used = new Set(res.stats.filter((s) => s.families > 0).map((s) => s.bus_id));
+  res.virtual = virtual.filter((v) => used.has(v.id));
+  res.stats = res.stats.filter((s) => !String(s.bus_id).startsWith('new:') || used.has(s.bus_id));
+  res.extra = extra;
+  return res;
 }
