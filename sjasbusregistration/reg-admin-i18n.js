@@ -1,7 +1,7 @@
 // SJAS Bus Registration — Arabic strings for the administrator page.
 // Keys are the English text used in reg-admin.js / reg-fleet.js; {placeholders} stay as they are.
 
-import { addStrings } from './reg-i18n.js?v=13';
+import { addStrings } from './reg-i18n.js?v=14';
 
 addStrings({
   // Shell, sign-in, dashboard
@@ -337,6 +337,27 @@ addStrings({
   'Area bus ({area})': 'باص المنطقة ({area})',
   'Joined automatically: {m} m from the nearest family on this bus': 'انضم تلقائيًا: على بعد {m} م من أقرب أسرة على هذا الباص',
   'Joined automatically: same area, {m} m from the nearest family on this bus': 'انضم تلقائيًا: نفس المنطقة، على بعد {m} م من أقرب أسرة على هذا الباص',
+
+  // Families dialog (manual assignment)
+  'Families': 'الأسر',
+  'Families on {bus}': 'الأسر على {bus}',
+  'On this bus ({n})': 'على هذا الباص ({n})',
+  'No families on this bus yet.': 'لا توجد أسر على هذا الباص بعد.',
+  'Add families': 'إضافة أسر',
+  'Search ID, parent or area': 'ابحث بالرقم أو ولي الأمر أو المنطقة',
+  'Families without a bus': 'الأسر بدون باص',
+  'All families (moves them from their bus)': 'كل الأسر (ينقلها من باصها الحالي)',
+  "Families from this bus's area and nearest pickup points are listed first.": 'تظهر أولاً أسر منطقة هذا الباص وأقرب أماكن الركوب.',
+  'Current bus': 'الباص الحالي',
+  'same area': 'نفس المنطقة',
+  'No families match.': 'لا توجد أسر مطابقة.',
+  'Lock them on this bus (auto-assign will not move them)': 'تثبيتها على هذا الباص (التوزيع التلقائي لن ينقلها)',
+  'After adding: {used} / {cap} students': 'بعد الإضافة: {used} / {cap} طالب',
+  'Add selected ({n})': 'إضافة المحدد ({n})',
+  'Remove {code} from {bus}? The family becomes unassigned and will not be placed on a bus automatically.': 'إزالة {code} من {bus}؟ ستصبح الأسرة بدون باص ولن تُوزَّع على باص تلقائيًا.',
+  'Removed': 'تمت الإزالة',
+  '{n} family(ies) added to {bus}': 'تمت إضافة {n} أسرة إلى {bus}',
+  'Over capacity: {bus} would carry {n} students (capacity {c})': 'تجاوز السعة: {bus} سيحمل {n} طالب (السعة {c})',
 
   // Bus dialog
   'Bus number / name': 'رقم / اسم الباص',

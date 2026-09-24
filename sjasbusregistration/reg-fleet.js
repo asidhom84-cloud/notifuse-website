@@ -1,11 +1,11 @@
 // SJAS Bus Registration — admin: fleet, bus assignment, routes, settings, driver sheets.
 
-import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=13';
-import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=13';
-import { hull, PALETTE } from './reg-cluster.js?v=13';
-import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=13';
-import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=13';
-import { t } from './reg-i18n.js?v=13';
+import { appleMapsUrl, distanceM, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=14';
+import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=14';
+import { hull, PALETTE } from './reg-cluster.js?v=14';
+import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=14';
+import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=14';
+import { t } from './reg-i18n.js?v=14';
 
 let ctx = null;          // { call, getRows, openDetail, refreshAll }
 let fleet = null;        // /admin/fleet payload
@@ -29,6 +29,12 @@ const tt = (key, vars) => esc(t(key, vars));
 const km = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)} ${t('km')}` : `${Math.round(m)} ${t('m')}`);
 const mins = (s) => `${Math.round(s / 60)} ${t('min')}`;
 const students = (n) => t(n === 1 ? '1 student' : '{n} students', { n });
+
+/** Server messages that carry values. */
+function apiMsg(msg) {
+  const m = /^Over capacity: bus (.+) would carry (\d+) students \(capacity (\d+)\)$/.exec(msg || '');
+  return m ? t('Over capacity: {bus} would carry {n} students (capacity {c})', { bus: m[1], n: m[2], c: m[3] }) : t(msg);
+}
 
 /** Assignment reasons are stored in English; show them in the admin's language. */
 function reasonLabel(r) {
@@ -89,6 +95,7 @@ export async function renderBuses(panel) {
       <span class="sj-small sj-muted">${tt('{n} families', { n: num(famCount) })}${s?.spread_p90_m != null ? ` · ${tt('spread {d} (90%)', { d: km(s.spread_p90_m) })}` : ''}${targetSeats(b, pct) < b.capacity ? ` · ${tt('target {n}', { n: targetSeats(b, pct) })}` : ''}</span><br>
       <span class="sj-small">${appr ? `<span class="sj-badge ${appr.stale ? 'sj-badge-warn' : 'sj-badge-ok'}">${tt(appr.stale ? 'Route v{v} needs review' : 'Route v{v} approved', { v: appr.version })}</span>` : draft ? `<span class="sj-badge sj-badge-warn">${tt('Draft route v{v}', { v: draft.version })}</span>` : `<span class="sj-badge">${tt('No route')}</span>`}</span>
       <div class="sj-inline" style="margin-top:6px;flex-wrap:wrap">
+        <button type="button" class="sj-btn sj-btn-sm sj-btn-primary" data-fams-bus="${esc(b.id)}">${tt('Families')}</button>
         <button type="button" class="sj-btn sj-btn-sm" data-edit-bus="${esc(b.id)}">${tt('Edit')}</button>
         <button type="button" class="sj-btn sj-btn-sm" data-lock-bus="${esc(b.id)}">${tt(b.assignments_locked ? 'Unlock' : 'Lock')}</button>
         <button type="button" class="sj-btn sj-btn-sm" data-show-bus="${esc(b.id)}">${tt('Map')}</button>
@@ -180,6 +187,7 @@ export async function renderBuses(panel) {
     try {
       if (b.dataset.addBus !== undefined) return busDialog(null);
       if (b.dataset.editBus) return busDialog(busById(b.dataset.editBus));
+      if (b.dataset.famsBus) return familiesDialog(busById(b.dataset.famsBus), () => { preview = null; renderBuses(panel); });
       if (b.dataset.lockBus) {
         const bus = busById(b.dataset.lockBus);
         await ctx.call(`/admin/buses/${bus.id}`, { method: 'POST', body: { assignments_locked: !bus.assignments_locked } });
@@ -257,7 +265,7 @@ export async function renderBuses(panel) {
     try {
       await ctx.call('/admin/assignments/apply', { method: 'POST', body });
     } catch (err) {
-      if (err.code === 'over_capacity' && confirm(`${t(err.message)}\n\n${t('Assign anyway? The bus will be shown as over capacity.')}`)) {
+      if (err.code === 'over_capacity' && confirm(`${apiMsg(err.message)}\n\n${t('Assign anyway? The bus will be shown as over capacity.')}`)) {
         await ctx.call('/admin/assignments/apply', { method: 'POST', body: { ...body, allow_over_capacity: true } });
       } else if (err.code !== 'over_capacity') return toast(t(err.message), 5000);
       else return;
@@ -275,6 +283,124 @@ function familyPopup(f, bid, a) {
       ${fleet.buses.filter((b) => b.active).map((b) => `<option value="${esc(b.id)}" ${b.id === bid ? 'selected' : ''}>${esc(b.bus_number)} (${tt('{n} free', { n: b.capacity - b.students })})</option>`).join('')}</select>
       <label style="font-size:12px"><input type="checkbox" data-lockbox ${a?.locked || !a ? 'checked' : ''}> ${tt('lock')}</label></div>
     <div class="acts"><button type="button" data-move-go="${esc(f.code)}">${tt('Save')}</button><button type="button" data-open="${esc(f.code)}">${tt('Open')}</button></div></div>`;
+}
+
+/**
+ * Manually manage one bus: see its families, remove them, and add families from a list
+ * (families from the bus's area and nearest pickups first). Saved as one manual change
+ * (undoable); a full bus needs an explicit "assign anyway".
+ */
+function familiesDialog(bus, onDone) {
+  const all = families().filter((f) => f.has_pin);
+  const amap = assignmentMap();
+  const onBus = () => all.filter((f) => amap.get(f.code)?.bus_id === bus.id);
+  const members = onBus();
+  const key = (x) => String(x || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const busName = key(bus.bus_number);
+  const areaCount = new Map();
+  for (const f of members) areaCount.set(f.area_id, (areaCount.get(f.area_id) || 0) + 1);
+  const homeArea = [...areaCount].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const centre = members.length
+    ? { lat: members.reduce((n, f) => n + f.lat, 0) / members.length, lng: members.reduce((n, f) => n + f.lng, 0) / members.length }
+    : bus.start_lat != null ? { lat: bus.start_lat, lng: bus.start_lng } : null;
+  const sameArea = (f) => (homeArea ? f.area_id === homeArea : busName.includes(key(f.area)));
+  const dist = (f) => (centre ? distanceM(centre.lat, centre.lng, f.lat, f.lng) : null);
+  const state = { q: '', show: 'unassigned', picked: new Set(), lock: true };
+
+  const body = document.createElement('div');
+  const modal = openModal(t('Families on {bus}', { bus: bus.bus_number }), body, { wide: true });
+  const used = () => onBus().reduce((n, f) => n + f.students, 0);
+  const pickedStudents = () => all.filter((f) => state.picked.has(f.code)).reduce((n, f) => n + f.students, 0);
+
+  const draw = () => {
+    const q = key(state.q);
+    const candidates = all
+      .filter((f) => amap.get(f.code)?.bus_id !== bus.id)
+      .filter((f) => state.show === 'all' || !amap.get(f.code))
+      .filter((f) => !q || key(`${f.code} ${f.parent} ${f.area}`).includes(q))
+      .map((f) => ({ f, same: sameArea(f), d: dist(f) }))
+      .sort((a, b) => (b.same - a.same) || ((a.d ?? 1e12) - (b.d ?? 1e12)) || a.f.area.localeCompare(b.f.area) || a.f.code.localeCompare(b.f.code));
+    const after = used() + pickedStudents();
+    body.innerHTML = `
+      <p class="sj-help" style="margin-top:0">${tt('{used} / {cap} students', { used: num(used()), cap: num(bus.capacity) })} · ${tt('{n} families', { n: num(onBus().length) })}</p>
+      <div class="sj-section" style="margin-top:0"><h3>${tt('On this bus ({n})', { n: onBus().length })}</h3>
+        ${onBus().length ? `<div class="sj-tablewrap"><table class="sj-table"><tbody>${onBus().map((f) => `<tr>
+          <td class="sj-code">${esc(f.code)}</td><td>${esc(f.parent)}</td><td>${esc(students(f.students))}</td><td>${esc(f.area)}</td>
+          <td class="r"><button type="button" class="sj-btn sj-btn-sm sj-btn-ghost" data-remove="${esc(f.code)}">${tt('Remove')}</button></td></tr>`).join('')}</tbody></table></div>`
+          : `<p class="sj-muted">${tt('No families on this bus yet.')}</p>`}</div>
+      <div class="sj-section"><h3>${tt('Add families')}</h3>
+        <div class="sj-toolbar">
+          <input class="sj-input" data-q placeholder="${tt('Search ID, parent or area')}" value="${esc(state.q)}" style="flex:1;min-width:180px">
+          <select data-show><option value="unassigned">${tt('Families without a bus')}</option><option value="all">${tt('All families (moves them from their bus)')}</option></select>
+        </div>
+        <p class="sj-help" style="margin-top:4px">${tt("Families from this bus's area and nearest pickup points are listed first.")}</p>
+        <div class="sj-tablewrap" style="max-height:45vh;overflow:auto"><table class="sj-table">
+          <thead><tr><th></th><th>${tt('ID')}</th><th>${tt('Parent')}</th><th>${tt('Students')}</th><th>${tt('Area')}</th><th>${tt('Distance')}</th><th>${tt('Current bus')}</th></tr></thead>
+          <tbody>${candidates.map(({ f, same, d }) => `<tr class="sj-clickable" data-pick="${esc(f.code)}">
+            <td><input type="checkbox" data-pickbox="${esc(f.code)}" ${state.picked.has(f.code) ? 'checked' : ''} aria-label="${esc(f.code)}"></td>
+            <td class="sj-code">${esc(f.code)}</td><td>${esc(f.parent)}</td><td>${esc(students(f.students))}</td>
+            <td>${esc(f.area)}${same ? ` <span class="sj-badge sj-badge-ok">${tt('same area')}</span>` : ''}</td>
+            <td class="sj-num">${d != null ? km(d) : '—'}</td>
+            <td>${amap.get(f.code) ? esc(busById(amap.get(f.code).bus_id)?.bus_number || '?') : `<span class="sj-muted">${tt('none')}</span>`}</td></tr>`).join('')
+            || `<tr><td colspan="7" class="sj-muted">${tt('No families match.')}</td></tr>`}</tbody></table></div>
+        <label class="sj-check" style="display:flex;margin-top:10px"><input type="checkbox" data-lock ${state.lock ? 'checked' : ''}> <span>${tt('Lock them on this bus (auto-assign will not move them)')}</span></label>
+        <div class="sj-formfoot">
+          <span class="sj-small ${after > bus.capacity ? '' : 'sj-muted'}" style="${after > bus.capacity ? 'color:var(--danger)' : ''}">${tt('After adding: {used} / {cap} students', { used: num(after), cap: num(bus.capacity) })}</span>
+          <button type="button" class="sj-btn sj-btn-primary" data-add ${state.picked.size ? '' : 'disabled'}>${tt('Add selected ({n})', { n: state.picked.size })}</button>
+        </div></div>`;
+    body.querySelector('[data-show]').value = state.show;
+    const qi = body.querySelector('[data-q]');
+    qi.addEventListener('input', () => { state.q = qi.value; const pos = qi.selectionStart; draw(); const n = body.querySelector('[data-q]'); n.focus(); n.setSelectionRange(pos, pos); });
+    body.querySelector('[data-show]').addEventListener('change', (e) => { state.show = e.target.value; draw(); });
+    body.querySelector('[data-lock]').addEventListener('change', (e) => { state.lock = e.target.checked; });
+  };
+
+  const save = async (changes, summary) => {
+    const req = { kind: 'manual', changes, summary };
+    try {
+      await ctx.call('/admin/assignments/apply', { method: 'POST', body: req });
+    } catch (err) {
+      if (err.code !== 'over_capacity') throw err;
+      if (!confirm(`${apiMsg(err.message)}\n\n${t('Assign anyway? The bus will be shown as over capacity.')}`)) return false;
+      await ctx.call('/admin/assignments/apply', { method: 'POST', body: { ...req, allow_over_capacity: true } });
+    }
+    await loadFleet();
+    amap.clear();
+    for (const [k, v] of assignmentMap()) amap.set(k, v);
+    return true;
+  };
+
+  body.onclick = async (e) => {
+    const row = e.target.closest('[data-pick]');
+    if (row && !e.target.closest('button')) {
+      const code = row.dataset.pick;
+      if (state.picked.has(code)) state.picked.delete(code); else state.picked.add(code);
+      return draw();
+    }
+    const b = e.target.closest('button');
+    if (!b) return;
+    try {
+      if (b.dataset.remove) {
+        if (!confirm(t('Remove {code} from {bus}? The family becomes unassigned and will not be placed on a bus automatically.', { code: b.dataset.remove, bus: bus.bus_number }))) return;
+        b.disabled = true;
+        await save([{ registration_code: b.dataset.remove, bus_id: null, locked: false, reason: 'Manual', source: 'manual' }], { manual_remove: bus.bus_number });
+        toast(t('Removed'));
+        return draw();
+      }
+      if (b.dataset.add !== undefined) {
+        const codes = [...state.picked];
+        b.disabled = true;
+        const ok = await save(codes.map((code) => ({ registration_code: code, bus_id: bus.id, locked: state.lock, reason: 'Manual', source: 'manual' })), { manual_add: bus.bus_number, families: codes.length });
+        if (!ok) { b.disabled = false; return; }
+        state.picked.clear();
+        toast(t('{n} family(ies) added to {bus}', { n: codes.length, bus: bus.bus_number }));
+        return draw();
+      }
+    } catch (err) { toast(apiMsg(err.message), 6000); b.disabled = false; }
+  };
+  const close = modal.close;
+  modal.close = (...a) => { close(...a); onDone(); };
+  draw();
 }
 
 function busDialog(bus) {
