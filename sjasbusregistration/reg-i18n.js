@@ -22,10 +22,28 @@ const AR = {
   'Other areas': 'مناطق أخرى',
   '{n} students': '{n} طالب',
   'No registrations yet — be the first.': 'لا توجد تسجيلات بعد — كن أول من يسجل.',
+  '{n} students registered': '{n} طالب مسجل',
+  '1 student': 'طالب واحد',
+  '{n} other students': '{n} طلاب آخرون',
+  'Sharing with other parents': 'المشاركة مع أولياء الأمور الآخرين',
+  'Nothing is shared unless you tick a box. Only first names are shown, in the area list. Your phone number, pickup location and address are never shown to other parents.':
+    'لا تتم مشاركة أي شيء إلا إذا اخترت ذلك. تظهر الأسماء الأولى فقط في قائمة المناطق. رقم هاتفك ومكان الركوب وعنوانك لا تظهر أبدًا لأولياء الأمور الآخرين.',
+  'Allow my first name to appear in the shared area list.': 'أسمح بظهور اسمي الأول في قائمة المنطقة المشتركة.',
+  "Allow my children's first names to appear to other registered parents.": 'أسمح بظهور الأسماء الأولى لأبنائي لأولياء الأمور المسجلين الآخرين.',
+  'My transportation status': 'حالة النقل الخاصة بي',
+  'Area': 'المنطقة',
+  'Students in your area': 'الطلاب في منطقتك',
+  '{n} students are currently registered in your area.': '{n} طالب مسجلون حاليًا في منطقتك.',
+  'Near your pickup point': 'بالقرب من مكان ركوبك',
+  '{n} other students are registered within about 1 km of your pickup point.': '{n} طالب آخرون مسجلون على بعد حوالي 1 كم من مكان ركوبك.',
+  'More registrations may be added in your area.': 'قد تتم إضافة تسجيلات أخرى في منطقتك.',
+  'Bus assignment': 'تحديد الباص',
+  'Not assigned yet': 'لم يتم التحديد بعد',
+  'Bus assignments are still being prepared.': 'جارٍ إعداد توزيع الباصات.',
   'Register my family': 'تسجيل أسرتي',
   'Edit my registration': 'تعديل تسجيلي',
-  'Only anonymous totals are shown here. Names, phone numbers and pickup locations are never visible to other parents.':
-    'تظهر هنا الأعداد فقط بدون أي بيانات شخصية. الأسماء وأرقام الهواتف وأماكن الركوب لا تظهر أبدًا لأولياء الأمور الآخرين.',
+  'Only totals are shown here, plus first names of families who chose to share them. Phone numbers, addresses and pickup locations are never visible to other parents.':
+    'تظهر هنا الأعداد فقط، مع الأسماء الأولى للأسر التي اختارت مشاركتها. أرقام الهواتف والعناوين وأماكن الركوب لا تظهر أبدًا لأولياء الأمور الآخرين.',
 
   // Form
   '← Back': '→ رجوع',

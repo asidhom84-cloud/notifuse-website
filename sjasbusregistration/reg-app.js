@@ -1,9 +1,9 @@
 // SJAS Bus Registration — parent page.
 // Parents see only anonymous totals; their own record only after Registration ID + PIN.
 
-import { api, ApiError, copyText, esc, fmtDate, local, num, session, toast, tokenFrom } from './reg-common.js?v=2';
-import { registrationForm } from './reg-form.js?v=2';
-import { getLang, initLang, setLang, t } from './reg-i18n.js?v=2';
+import { api, ApiError, copyText, esc, fmtDate, local, num, session, toast, tokenFrom } from './reg-common.js?v=3';
+import { registrationForm } from './reg-form.js?v=3';
+import { getLang, initLang, setLang, t } from './reg-i18n.js?v=3';
 
 const VIEWER_KEY = 'busreg.viewer';
 const EDITOR_KEY = 'busreg.editor';
@@ -98,9 +98,20 @@ function renderGate() {
 function renderHome() {
   signoutBtn.hidden = false;
   const s = summary;
+  // Names appear only for families who opted in (first names only); everyone else is a count.
+  const comma = getLang() === 'ar' ? '، ' : ', ';
+  const sharedLine = (f) => {
+    const kids = f.students && f.students.length ? f.students.map((n) => `<bdi>${esc(n)}</bdi>`).join(comma) : null;
+    const count = esc(f.count === 1 ? t('1 student') : t('{n} students', { n: num(f.count) }));
+    if (f.parent) return `<bdi>${esc(f.parent)}</bdi> — ${kids || count}`;
+    return kids;
+  };
+  const areaBlock = (a) => `<li><span>${esc(a.name)}</span><span class="n">${esc(t('{n} students registered', { n: num(a.students) }))}</span></li>
+    ${a.shared && a.shared.length ? `<li class="rg-shared"><ul>${a.shared.map((f) => `<li>${sharedLine(f)}</li>`).join('')}
+      ${a.other_students ? `<li class="sj-muted">${esc(t('{n} other students', { n: num(a.other_students) }))}</li>` : ''}</ul></li>` : ''}`;
   const areaList = s.areas.length || s.other_students
-    ? `<ul class="sj-arealist">${s.areas.map((a) => `<li><span>${esc(a.name)}</span><span class="n">${esc(t('{n} students', { n: num(a.students) }))}</span></li>`).join('')}
-        ${s.other_students ? `<li><span>${esc(t('Other areas'))}</span><span class="n">${esc(t('{n} students', { n: num(s.other_students) }))}</span></li>` : ''}</ul>`
+    ? `<ul class="sj-arealist">${s.areas.map(areaBlock).join('')}
+        ${s.other_students ? `<li><span>${esc(t('Other areas'))}</span><span class="n">${esc(t('{n} students registered', { n: num(s.other_students) }))}</span></li>` : ''}</ul>`
     : `<p class="sj-muted" style="margin:0">${esc(t('No registrations yet — be the first.'))}</p>`;
   app.innerHTML = `
     <section class="sj-hero">
@@ -119,7 +130,7 @@ function renderHome() {
       <h3 style="margin:0 0 10px">${esc(t('Students by area'))}</h3>
       ${areaList}
     </section>
-    <p class="sj-help">${esc(t('Only anonymous totals are shown here. Names, phone numbers and pickup locations are never visible to other parents.'))}</p>`;
+    <p class="sj-help">${esc(t('Only totals are shown here, plus first names of families who chose to share them. Phone numbers, addresses and pickup locations are never visible to other parents.'))}</p>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -225,6 +236,7 @@ async function renderEditForm() {
       <button type="button" class="sj-linkbtn" data-end>${esc(t('Finish editing'))}</button></div>
     <div class="sj-card sj-formcard">
       <h2>${esc(t('Edit {code}', { code: mine.registration_code }))}</h2>
+      ${statusCard(mine)}
       ${mine.status === 'hidden' ? `<div class="sj-note sj-note-warn">${esc(t('This registration is currently hidden by the administrator.'))}</div>` : ''}
       <div data-form></div>
     </div>
@@ -252,6 +264,22 @@ async function renderEditForm() {
   });
   renderRemoval(app.querySelector('[data-removal]'), mine, token);
   window.scrollTo(0, 0);
+}
+
+// Private, read-only: only this family's own situation plus anonymous counts
+// (the server already withheld any count based on fewer than 3 families).
+function statusCard(mine) {
+  const st = mine.status || {};
+  const more = esc(t('More registrations may be added in your area.'));
+  return `<section class="rg-status-card">
+    <h3>${esc(t('My transportation status'))}</h3>
+    <dl class="sj-kv">
+      <dt>${esc(t('Area'))}</dt><dd>${esc(st.area || mine.area_name || '—')}</dd>
+      <dt>${esc(t('Students in your area'))}</dt><dd>${st.area_students != null ? esc(t('{n} students are currently registered in your area.', { n: num(st.area_students) })) : more}</dd>
+      <dt>${esc(t('Near your pickup point'))}</dt><dd>${st.nearby_students != null ? esc(t('{n} other students are registered within about 1 km of your pickup point.', { n: num(st.nearby_students) })) : more}</dd>
+      <dt>${esc(t('Bus assignment'))}</dt><dd><b>${esc(t('Not assigned yet'))}</b><br><span class="sj-muted">${esc(t('Bus assignments are still being prepared.'))}</span></dd>
+    </dl>
+  </section>`;
 }
 
 function renderRemoval(box, mine, token) {

@@ -417,3 +417,9 @@ html[lang="ar"] .sj-table thead th, html[lang="ar"] .sj-totalbar .k { letter-spa
 .rg-popup b { font-size: 14px; }
 .rg-popup .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .rg-popup .acts a, .rg-popup .acts button { font-size: 12px; padding: 4px 8px; border: 1px solid var(--line-strong); border-radius: 8px; background: #fff; color: var(--accent-strong); text-decoration: none; cursor: pointer; }
+.sj-arealist .rg-shared { display: block; grid-column: 1 / -1; margin: -2px 0 8px; }
+.sj-arealist .rg-shared ul { list-style: none; margin: 0; padding-inline-start: 12px; border-inline-start: 2px solid var(--line); font-size: 0.9rem; color: var(--ink-soft); }
+.sj-arealist .rg-shared li { display: block; padding: 2px 0; }
+.rg-status-card { background: var(--accent-soft); border: 1px solid #b9e0ea; border-radius: var(--radius); padding: 14px 16px; margin: 4px 0 18px; }
+.rg-status-card h3 { margin: 0 0 8px; }
+.rg-status-card .sj-kv { font-size: 0.9375rem; }

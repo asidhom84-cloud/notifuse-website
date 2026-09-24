@@ -1,8 +1,8 @@
 // SJAS Bus Registration — the registration form (parent create/edit + admin edit).
 
-import { esc, matchArea } from './reg-common.js?v=2';
-import { t } from './reg-i18n.js?v=2';
-import { openPicker, renderPreview } from './reg-map.js?v=2';
+import { esc, matchArea } from './reg-common.js?v=3';
+import { t } from './reg-i18n.js?v=3';
+import { openPicker, renderPreview } from './reg-map.js?v=3';
 
 const NEW_AREA = '__new__';
 
@@ -79,6 +79,18 @@ export function registrationForm(root, opts) {
           <input id="f-landmark" maxlength="200" placeholder="${esc(t('e.g. near the mosque'))}"></div>
         <div class="sj-field"><label for="f-notes">${esc(t('Pickup notes'))}</label>
           <textarea id="f-notes" maxlength="500" placeholder="${esc(t('e.g. please call when you arrive'))}"></textarea></div>
+      </div>
+
+      <div class="sj-section">
+        <h3>${esc(t('Sharing with other parents'))} <span class="sj-opt">${esc(t('(optional)'))}</span></h3>
+        <p class="sj-help" style="margin-top:-4px">${esc(t('Nothing is shared unless you tick a box. Only first names are shown, in the area list. Your phone number, pickup location and address are never shown to other parents.'))}</p>
+        <label class="sj-check" style="margin-bottom:10px"><input type="checkbox" id="f-share-parent">
+          <span>${esc(t('Allow my first name to appear in the shared area list.'))}</span></label>
+        <label class="sj-check"><input type="checkbox" id="f-share-students">
+          <span>${esc(t("Allow my children's first names to appear to other registered parents."))}</span></label>
+      </div>
+
+      <div class="sj-section">
         ${isAdmin ? `<div class="sj-field"><label for="f-admin-notes">Admin notes <span class="sj-opt">(internal)</span></label>
           <textarea id="f-admin-notes" maxlength="4000"></textarea></div>` : ''}
         <p class="sj-help">${esc(t('Maps are provided by OpenStreetMap. Their servers see which part of the map is shown or searched — never your name, phone or children.'))}</p>
@@ -102,6 +114,8 @@ export function registrationForm(root, opts) {
   $('#f-landmark').value = init.landmark || '';
   $('#f-notes').value = init.pickup_notes || '';
   if (isAdmin) $('#f-admin-notes').value = init.admin_notes || '';
+  $('#f-share-parent').checked = init.share_parent_name === true;
+  $('#f-share-students').checked = init.share_student_names === true;
 
   // ----- Students
   const studentsEl = $('[data-students]');
@@ -249,6 +263,8 @@ export function registrationForm(root, opts) {
       landmark: $('#f-landmark').value.trim(),
       pickup_notes: $('#f-notes').value.trim(),
       consent: isCreate ? true : undefined,
+      share_parent_name: $('#f-share-parent').checked,
+      share_student_names: $('#f-share-students').checked,
     };
     if (isAdmin) payload.admin_notes = $('#f-admin-notes').value.trim();
 

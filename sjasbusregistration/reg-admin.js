@@ -4,10 +4,10 @@
 import {
   api, appleMapsUrl, copyText, downloadExcel, esc, fmtDate, fmtDateTime, googleMapsUrl, num,
   openModal, session, toast, today, tokenFrom,
-} from './reg-common.js?v=2';
-import { registrationForm } from './reg-form.js?v=2';
-import { addTiles, loadMarkerCluster, renderPreview } from './reg-map.js?v=2';
-import { hull, summarise } from './reg-cluster.js?v=2';
+} from './reg-common.js?v=3';
+import { registrationForm } from './reg-form.js?v=3';
+import { addTiles, loadMarkerCluster, renderPreview } from './reg-map.js?v=3';
+import { hull, summarise } from './reg-cluster.js?v=3';
 
 const ADMIN_KEY = 'busreg.admin';
 const app = document.getElementById('rg-app');
@@ -548,6 +548,7 @@ function describeAudit(a) {
     case 'removal_cancelled': return 'Parent cancelled removal request';
     case 'removal_dismissed': return 'Removal request dismissed';
     case 'admin_notes': return 'Admin note updated';
+    case 'sharing_change': return `Sharing: first name ${n?.share_parent_name ? 'on' : 'off'}, children's names ${n?.share_student_names ? 'on' : 'off'}`;
     case 'flag_resolved': return 'Duplicate warning reviewed';
     case 'flag_reopened': return 'Duplicate warning reopened';
     default: return esc(a.action);
@@ -590,6 +591,7 @@ function renderDetail(body, d, modal, reload) {
       <dt>Area</dt><dd>${esc(d.area_name)}${d.area_entered !== d.area_name ? ` <span class="sj-muted">(entered as “${esc(d.area_entered)}”)</span>` : ''}</dd>
       <dt>Address</dt><dd>${[d.building, d.street, d.landmark].filter(Boolean).map(esc).join(' · ') || '—'}</dd>
       <dt>Pickup notes</dt><dd>${d.pickup_notes ? esc(d.pickup_notes) : '—'}</dd>
+      <dt>Sharing</dt><dd>${d.share_parent_name ? '✓ first name' : '✗ first name'} · ${d.share_student_names ? '✓ children\'s first names' : '✗ children\'s names'} <span class="sj-muted">(parent's choice)</span></dd>
       <dt>Pickup point</dt><dd>${pin ? `${d.latitude.toFixed(6)}, ${d.longitude.toFixed(6)} · ${esc(d.location_source)}${d.location_accuracy_m ? ` ±${Math.round(d.location_accuracy_m)} m` : ''}${d.far_confirmed ? ' · <span class="sj-badge sj-badge-warn">far — confirmed by parent</span>' : ''}
         <br><a href="${esc(googleMapsUrl(d.latitude, d.longitude))}" target="_blank" rel="noopener noreferrer">Google Maps</a> · <a href="${esc(appleMapsUrl(d.latitude, d.longitude))}" target="_blank" rel="noopener noreferrer">Apple Maps</a>` : '<span class="sj-badge sj-badge-danger">missing</span>'}</dd>
       <dt>Registered</dt><dd>${esc(fmtDateTime(d.created_at))}</dd>
@@ -670,16 +672,16 @@ async function exportExcel(e) {
     await downloadExcel(`SJAS-Bus-Registrations-${today()}.xlsx`, [
       {
         name: 'Registrations',
-        header: ['Registration ID', 'Status', 'Parent', 'Phone', 'Student names', 'Student count', 'Grades', 'Area', 'Area (as entered)', 'Latitude', 'Longitude', 'Coordinates', 'Google Maps', 'Apple Maps', 'Location source', 'Accuracy (m)', 'Building/Villa/Compound', 'Street', 'Landmark', 'Pickup notes', 'Removal requested', 'Admin notes', 'Created', 'Updated'],
+        header: ['Registration ID', 'Status', 'Parent', 'Phone', 'Student names', 'Student count', 'Grades', 'Area', 'Area (as entered)', 'Latitude', 'Longitude', 'Coordinates', 'Google Maps', 'Apple Maps', 'Location source', 'Accuracy (m)', 'Building/Villa/Compound', 'Street', 'Landmark', 'Pickup notes', 'Shares first name', 'Shares children\'s names', 'Removal requested', 'Admin notes', 'Created', 'Updated'],
         rows: x.rows.map((r) => {
           const pin = hasPin(r);
           return [r.registration_code, r.status, r.parent_name, r.phone, r.students.map((s) => s.name).join(', '), r.student_count, r.students.map((s) => s.grade || '').join(', '),
             r.area_name, r.area_entered, pin ? r.latitude : '', pin ? r.longitude : '', pin ? `${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)}` : '',
             pin ? googleMapsUrl(r.latitude, r.longitude) : '', pin ? appleMapsUrl(r.latitude, r.longitude) : '', r.location_source || '', r.location_accuracy_m ?? '',
-            r.building || '', r.street || '', r.landmark || '', r.pickup_notes || '', r.removal_requested_at ? fmtDateTime(r.removal_requested_at) : '', r.admin_notes || '',
+            r.building || '', r.street || '', r.landmark || '', r.pickup_notes || '', r.share_parent_name ? 'Yes' : 'No', r.share_student_names ? 'Yes' : 'No', r.removal_requested_at ? fmtDateTime(r.removal_requested_at) : '', r.admin_notes || '',
             fmtDateTime(r.created_at), fmtDateTime(r.updated_at)];
         }),
-        widths: [12, 9, 24, 16, 30, 8, 14, 16, 16, 11, 11, 22, 36, 40, 10, 10, 22, 18, 22, 28, 16, 24, 17, 17],
+        widths: [12, 9, 24, 16, 30, 8, 14, 16, 16, 11, 11, 22, 36, 40, 10, 10, 22, 18, 22, 28, 10, 12, 16, 24, 17, 17],
       },
       {
         name: 'Students',
