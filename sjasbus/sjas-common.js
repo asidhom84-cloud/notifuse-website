@@ -663,8 +663,9 @@ export function submissionForm(root, opts) {
           <div class="sj-field"><label for="date-${p.key}">Payment date <span class="sj-opt">(optional)</span></label>
             <input id="date-${p.key}" data-f="payment_date" type="date" min="2020-01-01" max="${new Date().toISOString().slice(0, 10)}" value="${esc(p.payment_date)}"></div>
         </div>
-        <div class="sj-field"><label for="ref-${p.key}">Transaction / InstaPay reference <span class="sj-opt">(optional)</span></label>
-          <input id="ref-${p.key}" data-f="transaction_reference" maxlength="80" value="${esc(p.transaction_reference)}" autocomplete="off"></div>
+        <div class="sj-field"><label for="ref-${p.key}">Transaction reference number <span class="sj-opt">(optional)</span></label>
+          <input id="ref-${p.key}" data-f="transaction_reference" maxlength="80" value="${esc(p.transaction_reference)}" autocomplete="off" placeholder="e.g. 504812345678">
+          <div class="sj-help">The number shown on the receipt — not the method (“InstaPay”, “Cash”). Leave empty if there is none.</div></div>
         <span class="sj-label">Payment screenshot(s)${isCreate && i === 0 ? ' <span class="sj-req">*</span>' : ''}</span>
         <div class="sj-files">${thumbs}
           ${canAdd ? `<label class="sj-addfile"><input type="file" data-file="${i}" accept="image/jpeg,image/png,image/heic,image/heif,.heic,.heif,.jpg,.jpeg,.png" multiple><span style="font-size:1.25rem">＋</span>Add<br>screenshot</label>` : ''}

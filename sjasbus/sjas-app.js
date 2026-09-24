@@ -2,7 +2,7 @@
 import {
   api, ApiError, busKey, busSheets, copyText, downloadExcel, egp, esc, fmtDate, local, num,
   openLightbox, plural, session, submissionForm, toast, today, tokenFrom,
-} from './sjas-common.js?v=2';
+} from './sjas-common.js?v=3';
 
 const VIEWER_KEY = 'sjas.viewer';
 const EDITOR_KEY = 'sjas.editor';
