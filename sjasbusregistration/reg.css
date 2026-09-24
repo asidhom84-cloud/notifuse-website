@@ -430,3 +430,4 @@ html[lang="ar"] .sj-table thead th, html[lang="ar"] .sj-totalbar .k { letter-spa
 .rg-stoplist li.rg-you { border-color: #c2410c; background: #fff4ed; }
 .rg-roster { margin: 0; padding-inline-start: 18px; }
 .rg-roster li { margin-bottom: 4px; }
+.rg-trip b { display: inline; }

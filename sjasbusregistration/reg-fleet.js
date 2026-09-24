@@ -1,10 +1,10 @@
 // SJAS Bus Registration — admin: fleet, bus assignment, routes, settings, driver sheets.
 
-import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=11';
-import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=11';
-import { hull, PALETTE } from './reg-cluster.js?v=11';
-import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=11';
-import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=11';
+import { appleMapsUrl, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=12';
+import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=12';
+import { hull, PALETTE } from './reg-cluster.js?v=12';
+import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=12';
+import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=12';
 
 let ctx = null;          // { call, getRows, openDetail, refreshAll }
 let fleet = null;        // /admin/fleet payload
@@ -365,7 +365,7 @@ export async function renderRoutes(panel) {
     ${(() => {
       const tt = tripTimes();
       if (!tt) return '';
-      return `<div class="sj-note sj-note-info" style="margin-top:0"><b>Trip:</b>
+      return `<div class="sj-note sj-note-info rg-trip" style="margin-top:0"><b>Trip:</b>
         ${editing.start ? `driver leaves the start point at <b>${tt.depart}</b> (${km(tt.toFirstM)}, ~${mins(tt.toFirstS)} to the first stop) · ` : ''}first pickup <b>${tt.firstPickup || '—'}</b> ·
         arrives at school <b>${esc(String(fleet.settings.school_arrival_time).slice(0, 5))}</b>${editing.est_total_s ? ` · total ~${mins(editing.est_total_s)}` : ''}</div>`;
     })()}
