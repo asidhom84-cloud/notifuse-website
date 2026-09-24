@@ -2,7 +2,7 @@
 import {
   api, busSheets, downloadExcel, egp, esc, fmtDate, fmtDateTime, num, openLightbox, openModal,
   session, submissionForm, toast, today, tokenFrom,
-} from './sjas-common.js?v=3';
+} from './sjas-common.js?v=4';
 
 const ADMIN_KEY = 'sjas.admin';
 const app = document.getElementById('sj-app');
@@ -118,7 +118,7 @@ async function refresh() {
 function renderDashboard() {
   signoutBtn.hidden = false;
   const s = data.summary;
-  const openFlags = data.flags.filter((f) => !f.resolved_at).length;
+  const openFlags = openPairCount();
   const withdrawals = data.rows.filter((r) => r.withdrawal_requested_at && r.status !== 'deleted').length;
   app.innerHTML = `
     <section class="sj-hero"><h1>SJAS Bus<small>Administrator dashboard</small></h1>
@@ -127,7 +127,7 @@ function renderDashboard() {
       <div class="sj-stat"><div class="k">Families submitted</div><div class="v">${num(s.families)}</div></div>
       <div class="sj-stat"><div class="k">Students represented</div><div class="v">${num(s.students)}</div></div>
       <div class="sj-stat sj-stat-total"><div class="k">Total documented payments</div><div class="v">${esc(egp(s.total_amount))}</div></div>
-      <div class="sj-stat ${openFlags ? 'sj-stat-warn' : ''}"><div class="k">Open review flags</div><div class="v">${num(openFlags)}</div></div>
+      <div class="sj-stat ${openFlags ? 'sj-stat-warn' : ''}"><div class="k">Possible duplicates to review</div><div class="v">${num(openFlags)}</div></div>
       <div class="sj-stat ${withdrawals ? 'sj-stat-warn' : ''}"><div class="k">Removal requests</div><div class="v">${num(withdrawals)}</div></div>
     </section>
     <div class="sj-actions">
@@ -137,7 +137,7 @@ function renderDashboard() {
     </div>
     <div class="sj-tabs" role="tablist">
       <button class="sj-tab" role="tab" data-tab="subs" aria-selected="${ui.tab === 'subs'}">Submissions</button>
-      <button class="sj-tab" role="tab" data-tab="flags" aria-selected="${ui.tab === 'flags'}">Review flags${openFlags ? ` <span class="sj-badge sj-badge-warn">${openFlags}</span>` : ''}</button>
+      <button class="sj-tab" role="tab" data-tab="flags" aria-selected="${ui.tab === 'flags'}">Review duplicates${openFlags ? ` <span class="sj-badge sj-badge-warn">${openFlags}</span>` : ''}</button>
       <button class="sj-tab" role="tab" data-tab="bus" aria-selected="${ui.tab === 'bus'}">By bus</button>
       <button class="sj-tab" role="tab" data-tab="district" aria-selected="${ui.tab === 'district'}">By district</button>
     </div>
@@ -236,41 +236,79 @@ function renderSubList(panel) {
   });
 }
 
-function renderFlags(panel) {
-  const open = data.flags.filter((f) => !f.resolved_at);
-  const resolved = data.flags.filter((f) => f.resolved_at);
-  const card = (f) => `<div class="sj-flag ${f.resolved_at ? 'resolved' : ''}">
-    <h4>⚑ ${esc(FLAG_LABEL[f.kind] || f.kind)}</h4>
-    <div>${esc(flagText(f))}</div>
-    <div class="sj-inline">
-      ${f.submission ? `<button type="button" class="sj-btn sj-btn-sm" data-open="${esc(f.submission.code)}">${esc(f.submission.code)} · ${esc(f.submission.parent_name)}</button>` : ''}
-      <span class="sj-muted">↔</span>
-      ${f.related ? `<button type="button" class="sj-btn sj-btn-sm" data-open="${esc(f.related.code)}">${esc(f.related.code)} · ${esc(f.related.parent_name)}</button>` : ''}
-    </div>
-    <div class="sj-inline">
-      ${f.resolved_at
-        ? `<span class="sj-small sj-muted">Resolved ${esc(fmtDateTime(f.resolved_at))}${f.resolution_note ? ` — ${esc(f.resolution_note)}` : ''}</span>
-           <button type="button" class="sj-btn sj-btn-sm sj-btn-ghost" data-reopen="${esc(f.id)}">Reopen</button>`
-        : `<input class="sj-input" style="flex:1;min-width:180px" placeholder="Resolution note (optional)" data-note="${esc(f.id)}">
-           <button type="button" class="sj-btn sj-btn-sm" data-resolve="${esc(f.id)}">Mark reviewed</button>`}
-    </div></div>`;
-  panel.innerHTML = `
-    ${open.length ? open.map(card).join('') : '<div class="sj-empty">No open review flags. 🎉</div>'}
-    ${resolved.length ? `<details style="margin-top:16px"><summary class="sj-muted" style="cursor:pointer">Reviewed flags (${resolved.length})</summary><div style="margin-top:10px">${resolved.map(card).join('')}</div></details>` : ''}
-    <p class="sj-help">Flags are internal and never shown to parents. Parents are never blocked; review and hide duplicates if needed.</p>`;
-  panel.onclick = onFlagClick;
+// Several flags usually describe the same two records (same student, same
+// phone, same screenshot...). Group them per pair so each pair is one review.
+function flagGroups(flags) {
+  const groups = new Map();
+  for (const f of flags) {
+    const codes = [f.submission?.code, f.related?.code].filter(Boolean).sort();
+    const key = `${f.resolved_at ? 'r' : 'o'}|${codes.join('|')}`;
+    if (!groups.has(key)) groups.set(key, { key, resolved: !!f.resolved_at, a: f.submission, b: f.related, flags: [] });
+    groups.get(key).flags.push(f);
+  }
+  return [...groups.values()];
 }
 
-async function onFlagClick(e) {
+function reasonList(flags) {
+  const out = [];
+  const dupImages = flags.filter((f) => f.kind === 'duplicate_evidence').length;
+  for (const f of flags) {
+    const d = f.detail || {};
+    if (f.kind === 'possible_duplicate_family') {
+      if (d.reason === 'same_student_same_bus') out.push(`Same student “${d.student}” on ${d.bus}`);
+      else out.push(REASON_LABEL[d.reason] || d.reason);
+    } else if (f.kind === 'duplicate_reference') out.push(`Same payment reference “${d.reference || ''}”`);
+  }
+  if (dupImages) out.push(`${dupImages} identical screenshot${dupImages > 1 ? 's' : ''} in both records`);
+  return out;
+}
+
+const openPairCount = () => flagGroups(data.flags.filter((f) => !f.resolved_at)).length;
+
+function renderFlags(panel) {
+  const groups = flagGroups(data.flags);
+  const open = groups.filter((g) => !g.resolved);
+  const resolved = groups.filter((g) => g.resolved);
+  const card = (g) => {
+    const reasons = reasonList(g.flags);
+    const f0 = g.flags[0];
+    return `<div class="sj-flag ${g.resolved ? 'resolved' : ''}">
+    <h4>⚑ ${reasons.length >= 3 ? 'Very likely the same family submitted twice' : 'Possible duplicate'}</h4>
+    <ul style="margin:4px 0 0;padding-left:20px">${reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
+    <div class="sj-inline">
+      ${g.a ? `<button type="button" class="sj-btn sj-btn-sm" data-open="${esc(g.a.code)}">${esc(g.a.code)} · ${esc(g.a.parent_name)}</button>` : ''}
+      <span class="sj-muted">↔</span>
+      ${g.b ? `<button type="button" class="sj-btn sj-btn-sm" data-open="${esc(g.b.code)}">${esc(g.b.code)} · ${esc(g.b.parent_name)}</button>` : ''}
+    </div>
+    <div class="sj-inline">
+      ${g.resolved
+        ? `<span class="sj-small sj-muted">Reviewed ${esc(fmtDateTime(f0.resolved_at))}${f0.resolution_note ? ` — ${esc(f0.resolution_note)}` : ''}</span>
+           <button type="button" class="sj-btn sj-btn-sm sj-btn-ghost" data-reopen="${esc(g.key)}">Reopen</button>`
+        : `<input class="sj-input" style="flex:1;min-width:180px" placeholder="Resolution note (optional), e.g. hid SJAS-0220 as duplicate" data-note="${esc(g.key)}">
+           <button type="button" class="sj-btn sj-btn-sm" data-resolve="${esc(g.key)}">Mark reviewed</button>`}
+    </div></div>`;
+  };
+  panel.innerHTML = `
+    <p class="sj-help" style="margin-top:0">Each card is one pair of records. Open both, hide the duplicate (if it is one), then mark the pair reviewed.</p>
+    ${open.length ? open.map(card).join('') : '<div class="sj-empty">Nothing to review. 🎉</div>'}
+    ${resolved.length ? `<details style="margin-top:16px"><summary class="sj-muted" style="cursor:pointer">Reviewed (${resolved.length})</summary><div style="margin-top:10px">${resolved.map(card).join('')}</div></details>` : ''}
+    <p class="sj-help">Flags are internal and never shown to parents. Parents are never blocked; review and hide duplicates if needed.</p>`;
+  panel.onclick = (e) => onFlagClick(e, groups);
+}
+
+async function onFlagClick(e, groups) {
   const t = e.target.closest('button');
   if (!t) return;
   if (t.dataset.open) return openDetail(t.dataset.open);
-  const id = t.dataset.resolve || t.dataset.reopen;
-  if (!id) return;
-  const note = t.dataset.resolve ? (document.querySelector(`[data-note="${id}"]`)?.value || '') : '';
+  const key = t.dataset.resolve || t.dataset.reopen;
+  const group = groups.find((g) => g.key === key);
+  if (!group) return;
+  const note = t.dataset.resolve ? (document.querySelector(`[data-note="${CSS.escape(key)}"]`)?.value || '') : '';
   t.disabled = true;
   try {
-    await call(`/admin/flags/${id}`, { method: 'POST', body: { resolved: !!t.dataset.resolve, note } });
+    for (const f of group.flags) {
+      await call(`/admin/flags/${f.id}`, { method: 'POST', body: { resolved: !!t.dataset.resolve, note } });
+    }
     await refresh();
   } catch (err) { toast(err.message); t.disabled = false; }
 }
@@ -353,7 +391,7 @@ function renderDetail(body, d, modal, reload) {
       ${STATUS_BADGE[d.status] || ''}
       ${d.withdrawal_requested_at ? `<span class="sj-badge sj-badge-danger">Removal requested ${esc(fmtDate(d.withdrawal_requested_at))}</span>` : ''}
       ${d.pin_locked_until && new Date(d.pin_locked_until) > new Date() ? '<span class="sj-badge sj-badge-warn">PIN locked</span>' : ''}
-      ${openFlags.length ? `<span class="sj-badge sj-badge-warn">⚑ ${openFlags.length} open flag(s)</span>` : ''}
+      ${openFlags.length ? `<span class="sj-badge sj-badge-warn">⚑ possible duplicate of ${new Set(openFlags.map((f) => f.other?.code)).size} record(s)</span>` : ''}
     </div>
     ${d.withdrawal_requested_at ? `<div class="sj-note sj-note-warn"><b>The parent asked for this submission to be removed.</b>${d.withdrawal_reason ? esc(d.withdrawal_reason) : 'No reason given.'}</div>` : ''}
     <div class="sj-inline" style="flex-wrap:wrap;margin-bottom:16px">
@@ -396,11 +434,11 @@ function renderDetail(body, d, modal, reload) {
       }).join('')}</div>` : '<p class="sj-muted">No screenshots.</p>'}
     </div>
 
-    ${d.flags.length ? `<div class="sj-section"><h3>Review flags</h3>${d.flags.map((f) => `<div class="sj-flag ${f.resolved_at ? 'resolved' : ''}">
-      <h4>⚑ ${esc(FLAG_LABEL[f.kind] || f.kind)}</h4><div>${esc(flagText(f))}</div>
-      ${f.other ? `<div class="sj-small" style="margin-top:4px">Other submission: <b>${esc(f.other.code)}</b> · ${esc(f.other.parent_name)}</div>` : ''}
-      <div class="sj-inline">${f.resolved_at ? `<span class="sj-small sj-muted">Reviewed ${esc(fmtDateTime(f.resolved_at))}${f.resolution_note ? ` — ${esc(f.resolution_note)}` : ''}</span>`
-        : `<button type="button" class="sj-btn sj-btn-sm" data-flag="${esc(f.id)}">Mark reviewed</button>`}</div></div>`).join('')}</div>` : ''}
+    ${d.flags.length ? `<div class="sj-section"><h3>Possible duplicates</h3>${flagGroups(d.flags.map((f) => ({ ...f, submission: f.other, related: null }))).map((g) => `<div class="sj-flag ${g.resolved ? 'resolved' : ''}">
+      <h4>⚑ vs ${esc(g.a?.code || '?')} · ${esc(g.a?.parent_name || '')}</h4>
+      <ul style="margin:4px 0 0;padding-left:20px">${reasonList(g.flags).map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
+      <div class="sj-inline">${g.resolved ? `<span class="sj-small sj-muted">Reviewed ${esc(fmtDateTime(g.flags[0].resolved_at))}${g.flags[0].resolution_note ? ` — ${esc(g.flags[0].resolution_note)}` : ''}</span>`
+        : `<button type="button" class="sj-btn sj-btn-sm" data-flag="${esc(g.flags.map((f) => f.id).join(','))}">Mark reviewed</button>`}</div></div>`).join('')}</div>` : ''}
 
     <div class="sj-section"><h3>Admin note <span class="sj-opt">(internal)</span></h3>
       <textarea class="sj-input" data-notes maxlength="4000">${esc(d.admin_notes || '')}</textarea>
@@ -446,7 +484,7 @@ function renderDetail(body, d, modal, reload) {
         refresh();
       } else if (b.dataset.flag) {
         b.disabled = true;
-        await call(`/admin/flags/${b.dataset.flag}`, { method: 'POST', body: { resolved: true } });
+        for (const id of b.dataset.flag.split(',')) await call(`/admin/flags/${id}`, { method: 'POST', body: { resolved: true } });
         await reload();
         refresh();
       } else if (b.dataset.saveNotes !== undefined) {
