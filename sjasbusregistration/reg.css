@@ -423,3 +423,10 @@ html[lang="ar"] .sj-table thead th, html[lang="ar"] .sj-totalbar .k { letter-spa
 .rg-status-card { background: var(--accent-soft); border: 1px solid #b9e0ea; border-radius: var(--radius); padding: 14px 16px; margin: 4px 0 18px; }
 .rg-status-card h3 { margin: 0 0 8px; }
 .rg-status-card .sj-kv { font-size: 0.9375rem; }
+@media (max-width: 900px) { .rg-routegrid { grid-template-columns: 1fr !important; } }
+.rg-routegrid li[draggable] { cursor: grab; }
+.rg-stoplist { margin: 0 0 12px; padding-inline-start: 0; list-style: none; }
+.rg-stoplist li { padding: 6px 10px; border-inline-start: 3px solid var(--line-strong); margin-bottom: 4px; }
+.rg-stoplist li.rg-you { border-color: #c2410c; background: #fff4ed; }
+.rg-roster { margin: 0; padding-inline-start: 18px; }
+.rg-roster li { margin-bottom: 4px; }

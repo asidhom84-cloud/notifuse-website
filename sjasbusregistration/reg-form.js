@@ -1,8 +1,8 @@
 // SJAS Bus Registration — the registration form (parent create/edit + admin edit).
 
-import { esc, matchArea } from './reg-common.js?v=3';
-import { t } from './reg-i18n.js?v=3';
-import { openPicker, renderPreview } from './reg-map.js?v=3';
+import { esc, matchArea } from './reg-common.js?v=4';
+import { t } from './reg-i18n.js?v=4';
+import { openPicker, renderPreview } from './reg-map.js?v=4';
 
 const NEW_AREA = '__new__';
 
@@ -81,13 +81,19 @@ export function registrationForm(root, opts) {
           <textarea id="f-notes" maxlength="500" placeholder="${esc(t('e.g. please call when you arrive'))}"></textarea></div>
       </div>
 
-      <div class="sj-section">
-        <h3>${esc(t('Sharing with other parents'))} <span class="sj-opt">${esc(t('(optional)'))}</span></h3>
-        <p class="sj-help" style="margin-top:-4px">${esc(t('Nothing is shared unless you tick a box. Only first names are shown, in the area list. Your phone number, pickup location and address are never shown to other parents.'))}</p>
-        <label class="sj-check" style="margin-bottom:10px"><input type="checkbox" id="f-share-parent">
-          <span>${esc(t('Allow my first name to appear in the shared area list.'))}</span></label>
-        <label class="sj-check"><input type="checkbox" id="f-share-students">
-          <span>${esc(t("Allow my children's first names to appear to other registered parents."))}</span></label>
+      <div class="sj-section" data-sharing>
+        <h3>${esc(t('Sharing with your bus group'))}</h3>
+        <div class="sj-note sj-note-info" style="margin-top:0">
+          <b>${esc(t('Who can see this?'))}</b>
+          ${esc(t('Only families assigned to the same bus as you, once buses are assigned.'))}
+          ${esc(t("Parents assigned to other buses cannot see your pickup point, name, children's names or phone number."))}
+        </div>
+        ${[['f-share-pickup', 'Allow my pickup point to appear on my bus\'s shared route'],
+           ['f-share-parent', 'Show my first name to parents on my bus'],
+           ['f-share-students', "Show my children's first names to parents on my bus"],
+           ['f-share-phone', 'Show my phone number to parents on my bus']]
+          .map(([id, label]) => `<label class="sj-check" style="margin-bottom:10px"><input type="checkbox" id="${id}"><span>${esc(t(label))}</span></label>`).join('')}
+        <p class="sj-help">${esc(t('Your pickup location is always visible to the administrator for route planning, even if you choose not to share it with other parents. The bus driver and supervisor receive the details needed to run the bus.'))}</p>
       </div>
 
       <div class="sj-section">
@@ -114,8 +120,11 @@ export function registrationForm(root, opts) {
   $('#f-landmark').value = init.landmark || '';
   $('#f-notes').value = init.pickup_notes || '';
   if (isAdmin) $('#f-admin-notes').value = init.admin_notes || '';
+  // Pickup sharing: ON for new registrations; otherwise the family's saved choice.
+  $('#f-share-pickup').checked = isCreate ? true : init.share_pickup === true;
   $('#f-share-parent').checked = init.share_parent_name === true;
   $('#f-share-students').checked = init.share_student_names === true;
+  $('#f-share-phone').checked = init.share_phone === true;
 
   // ----- Students
   const studentsEl = $('[data-students]');
@@ -263,8 +272,10 @@ export function registrationForm(root, opts) {
       landmark: $('#f-landmark').value.trim(),
       pickup_notes: $('#f-notes').value.trim(),
       consent: isCreate ? true : undefined,
+      share_pickup: $('#f-share-pickup').checked,
       share_parent_name: $('#f-share-parent').checked,
       share_student_names: $('#f-share-students').checked,
+      share_phone: $('#f-share-phone').checked,
     };
     if (isAdmin) payload.admin_notes = $('#f-admin-notes').value.trim();
 

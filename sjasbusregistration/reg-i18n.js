@@ -40,6 +40,58 @@ const AR = {
   'Bus assignment': 'تحديد الباص',
   'Not assigned yet': 'لم يتم التحديد بعد',
   'Bus assignments are still being prepared.': 'جارٍ إعداد توزيع الباصات.',
+  // Same-bus sharing (final model)
+  'Sharing with your bus group': 'المشاركة مع مجموعة الباص',
+  'Who can see this?': 'من يمكنه رؤية ذلك؟',
+  'Only families assigned to the same bus as you, once buses are assigned.': 'الأسر المسجلة على نفس الباص معك فقط، بعد توزيع الباصات.',
+  "Parents assigned to other buses cannot see your pickup point, name, children's names or phone number.": 'أولياء الأمور على الباصات الأخرى لا يمكنهم رؤية مكان ركوبك أو اسمك أو أسماء أبنائك أو رقم هاتفك.',
+  "Allow my pickup point to appear on my bus's shared route": 'أسمح بظهور مكان ركوبي على خط سير الباص المشترك',
+  'Show my first name to parents on my bus': 'إظهار اسمي الأول لأولياء الأمور على نفس الباص',
+  "Show my children's first names to parents on my bus": 'إظهار الأسماء الأولى لأبنائي لأولياء الأمور على نفس الباص',
+  'Show my phone number to parents on my bus': 'إظهار رقم هاتفي لأولياء الأمور على نفس الباص',
+  'Your pickup location is always visible to the administrator for route planning, even if you choose not to share it with other parents. The bus driver and supervisor receive the details needed to run the bus.':
+    'مكان ركوبك يظهر دائمًا للمسؤول لتخطيط خط السير، حتى لو اخترت عدم مشاركته مع أولياء الأمور الآخرين. سائق الباص والمشرف يحصلان على البيانات اللازمة لتشغيل الباص.',
+  // Home / demand map
+  'My bus & status': 'باصي وحالتي',
+  'Where students are registered': 'أماكن تسجيل الطلاب',
+  'Anonymous groups of 3 or more families. No names or exact locations are shown.': 'مجموعات مجهولة الهوية من 3 أسر أو أكثر. لا تظهر أسماء أو أماكن دقيقة.',
+  '{n} students near this area': '{n} طالب بالقرب من هذه المنطقة',
+  'Only totals are shown here. Names, phone numbers, addresses and pickup locations are never shown school-wide. After buses are assigned, families on the same bus can see their bus route and whatever each family chose to share.':
+    'تظهر هنا الأعداد فقط. الأسماء وأرقام الهواتف والعناوين وأماكن الركوب لا تظهر أبدًا على مستوى المدرسة. بعد توزيع الباصات، ترى الأسر على نفس الباص خط سير الباص وما اختارت كل أسرة مشاركته.',
+  // PIN / sessions
+  'This phone will remember your bus details for 30 days (view only). Use “Sign out of this device” on a shared phone.': 'سيتذكر هذا الهاتف بيانات باصك لمدة 30 يومًا (للعرض فقط). استخدم «تسجيل الخروج من هذا الجهاز» إذا كان الهاتف مشتركًا.',
+  'Sign out of this device': 'تسجيل الخروج من هذا الجهاز',
+  'Remove your registration details from this phone? You will need your Registration ID and PIN again.': 'هل تريد إزالة بيانات تسجيلك من هذا الهاتف؟ ستحتاج إلى رقم التسجيل والرقم السري مرة أخرى.',
+  'Signed out of this device': 'تم تسجيل الخروج من هذا الجهاز',
+  // Status
+  'New: sharing with your bus group': 'جديد: المشاركة مع مجموعة الباص',
+  "You can now choose whether families on your bus can see your pickup point, first name, children's first names or phone. Nothing is shared until you choose.":
+    'يمكنك الآن اختيار ما إذا كانت الأسر على باصك ترى مكان ركوبك أو اسمك الأول أو الأسماء الأولى لأبنائك أو رقم هاتفك. لا تتم مشاركة أي شيء حتى تختار.',
+  'Review sharing options': 'مراجعة خيارات المشاركة',
+  '{n} students assigned': '{n} طالب على الباص',
+  'Capacity {n}': 'السعة {n}',
+  '{n} seats available': '{n} مقعد متاح',
+  'Route': 'خط السير',
+  'Being prepared': 'جارٍ الإعداد',
+  'Needs review': 'بحاجة إلى مراجعة',
+  'Your pickup point changed after bus assignment. The administrator will update your bus or route.': 'تغيّر مكان ركوبك بعد توزيع الباصات. سيقوم المسؤول بتحديث الباص أو خط السير.',
+  'Approved': 'معتمد',
+  'Your stop: {n} of {total}': 'محطتك: {n} من {total}',
+  'Estimated pickup {time}': 'موعد الركوب التقريبي {time}',
+  'View my bus route': 'عرض خط سير باصي',
+  // My bus route
+  'My bus route': 'خط سير باصي',
+  'Your bus route is being prepared.': 'جارٍ إعداد خط سير باصك.',
+  'Morning route': 'خط سير الصباح',
+  '{n} stops': '{n} محطة',
+  'Stop {n}': 'محطة {n}',
+  'YOU': 'أنت',
+  'Start': 'البداية',
+  'Stops': 'المحطات',
+  'Only families assigned to this bus can see this route. Grey stops are approximate because those families keep their exact pickup point private.':
+    'الأسر المسجلة على هذا الباص فقط يمكنها رؤية خط السير هذا. المحطات الرمادية تقريبية لأن هذه الأسر تحتفظ بمكان ركوبها الدقيق بشكل خاص.',
+  'Approximate position — this family keeps its exact pickup point private.': 'مكان تقريبي — هذه الأسرة تحتفظ بمكان ركوبها الدقيق بشكل خاص.',
+  'Families on your bus who chose to share': 'أسر على باصك اختارت المشاركة',
   'Register my family': 'تسجيل أسرتي',
   'Edit my registration': 'تعديل تسجيلي',
   'Only totals are shown here, plus first names of families who chose to share them. Phone numbers, addresses and pickup locations are never visible to other parents.':

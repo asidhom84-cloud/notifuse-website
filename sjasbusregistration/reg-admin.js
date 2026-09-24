@@ -4,10 +4,11 @@
 import {
   api, appleMapsUrl, copyText, downloadExcel, esc, fmtDate, fmtDateTime, googleMapsUrl, num,
   openModal, session, toast, today, tokenFrom,
-} from './reg-common.js?v=3';
-import { registrationForm } from './reg-form.js?v=3';
-import { addTiles, loadMarkerCluster, renderPreview } from './reg-map.js?v=3';
-import { hull, summarise } from './reg-cluster.js?v=3';
+} from './reg-common.js?v=4';
+import { registrationForm } from './reg-form.js?v=4';
+import { addTiles, loadMarkerCluster, renderPreview } from './reg-map.js?v=4';
+import { hull, summarise } from './reg-cluster.js?v=4';
+import { cleanupFleet, initFleet, renderBuses, renderRoutes, renderSettings } from './reg-fleet.js?v=4';
 
 const ADMIN_KEY = 'busreg.admin';
 const app = document.getElementById('rg-app');
@@ -163,11 +164,12 @@ function renderDashboard() {
       <span class="rg-maptotal" data-areatotal></span>
     </div>
     <div class="sj-tabs" role="tablist">
-      ${[['regs', 'Registrations'], ['map', 'Map'], ['areas', 'Areas'], ['dups', `Duplicates${dupPairs ? ` <span class="sj-badge sj-badge-warn">${dupPairs}</span>` : ''}`], ['removals', `Removal requests${removals ? ` <span class="sj-badge sj-badge-danger">${removals}</span>` : ''}`]]
+      ${[['regs', 'Registrations'], ['map', 'Map'], ['buses', 'Buses'], ['routes', 'Routes'], ['areas', 'Areas'], ['dups', `Duplicates${dupPairs ? ` <span class="sj-badge sj-badge-warn">${dupPairs}</span>` : ''}`], ['removals', `Removal requests${removals ? ` <span class="sj-badge sj-badge-danger">${removals}</span>` : ''}`]]
         .map(([k, label]) => `<button class="sj-tab" role="tab" data-tab="${k}" aria-selected="${ui.tab === k}">${label}</button>`).join('')}
     </div>
     <div id="rg-panel"></div>
-    <p class="sj-foot">Updated ${esc(fmtDateTime(data.generated_at))}</p>`;
+    <p class="sj-foot">Updated ${esc(fmtDateTime(data.generated_at))} · <button type="button" class="sj-linkbtn" data-settings>Route & assignment settings</button></p>`;
+  app.querySelector('[data-settings]').addEventListener('click', () => switchTab('settings'));
 
   const areaSel = app.querySelector('#area-filter');
   areaSel.value = data.areas.some((a) => a.id === ui.area) ? ui.area : 'all';
@@ -201,7 +203,11 @@ function renderPanel() {
   const panel = document.getElementById('rg-panel');
   panel.onclick = null;
   if (mapState) { mapState.map.remove(); mapState = null; }
+  cleanupFleet();
   if (ui.tab === 'map') return renderMap(panel);
+  if (ui.tab === 'buses') return renderBuses(panel);
+  if (ui.tab === 'routes') return renderRoutes(panel);
+  if (ui.tab === 'settings') return renderSettings(panel);
   if (ui.tab === 'areas') return renderAreas(panel);
   if (ui.tab === 'dups') return renderDups(panel);
   if (ui.tab === 'removals') return renderRemovals(panel);
@@ -548,7 +554,10 @@ function describeAudit(a) {
     case 'removal_cancelled': return 'Parent cancelled removal request';
     case 'removal_dismissed': return 'Removal request dismissed';
     case 'admin_notes': return 'Admin note updated';
-    case 'sharing_change': return `Sharing: first name ${n?.share_parent_name ? 'on' : 'off'}, children's names ${n?.share_student_names ? 'on' : 'off'}`;
+    case 'sharing_change': return `Sharing with same-bus parents: pickup ${n?.share_pickup ? 'on' : 'off'}, first name ${n?.share_parent_name ? 'on' : 'off'}, children ${n?.share_student_names ? 'on' : 'off'}, phone ${n?.share_phone ? 'on' : 'off'}`;
+    case 'bus_assignment': return `Bus: ${esc(o || 'none')} → ${esc(n?.bus || 'none')}${n?.reason ? ` (${esc(n.reason)})` : ''}`;
+    case 'assignment_confirmed': return 'Bus assignment confirmed after pickup move';
+    case 'sessions_revoked': return 'Parent signed out all devices';
     case 'flag_resolved': return 'Duplicate warning reviewed';
     case 'flag_reopened': return 'Duplicate warning reopened';
     default: return esc(a.action);
@@ -591,7 +600,7 @@ function renderDetail(body, d, modal, reload) {
       <dt>Area</dt><dd>${esc(d.area_name)}${d.area_entered !== d.area_name ? ` <span class="sj-muted">(entered as “${esc(d.area_entered)}”)</span>` : ''}</dd>
       <dt>Address</dt><dd>${[d.building, d.street, d.landmark].filter(Boolean).map(esc).join(' · ') || '—'}</dd>
       <dt>Pickup notes</dt><dd>${d.pickup_notes ? esc(d.pickup_notes) : '—'}</dd>
-      <dt>Sharing</dt><dd>${d.share_parent_name ? '✓ first name' : '✗ first name'} · ${d.share_student_names ? '✓ children\'s first names' : '✗ children\'s names'} <span class="sj-muted">(parent's choice)</span></dd>
+      <dt>Shared with same-bus parents</dt><dd>${[['share_pickup', 'pickup point'], ['share_parent_name', 'first name'], ['share_student_names', 'children\'s first names'], ['share_phone', 'phone']].map(([k, l]) => `${d[k] ? '✓' : '✗'} ${l}`).join(' · ')}${d.sharing_prompt_pending ? ' <span class="sj-badge sj-badge-warn">not yet reviewed by parent</span>' : ''}<br><span class="sj-muted sj-small">Parent-to-parent only. Driver sheets always include what is needed to run the bus.</span></dd>
       <dt>Pickup point</dt><dd>${pin ? `${d.latitude.toFixed(6)}, ${d.longitude.toFixed(6)} · ${esc(d.location_source)}${d.location_accuracy_m ? ` ±${Math.round(d.location_accuracy_m)} m` : ''}${d.far_confirmed ? ' · <span class="sj-badge sj-badge-warn">far — confirmed by parent</span>' : ''}
         <br><a href="${esc(googleMapsUrl(d.latitude, d.longitude))}" target="_blank" rel="noopener noreferrer">Google Maps</a> · <a href="${esc(appleMapsUrl(d.latitude, d.longitude))}" target="_blank" rel="noopener noreferrer">Apple Maps</a>` : '<span class="sj-badge sj-badge-danger">missing</span>'}</dd>
       <dt>Registered</dt><dd>${esc(fmtDateTime(d.created_at))}</dd>
@@ -672,16 +681,16 @@ async function exportExcel(e) {
     await downloadExcel(`SJAS-Bus-Registrations-${today()}.xlsx`, [
       {
         name: 'Registrations',
-        header: ['Registration ID', 'Status', 'Parent', 'Phone', 'Student names', 'Student count', 'Grades', 'Area', 'Area (as entered)', 'Latitude', 'Longitude', 'Coordinates', 'Google Maps', 'Apple Maps', 'Location source', 'Accuracy (m)', 'Building/Villa/Compound', 'Street', 'Landmark', 'Pickup notes', 'Shares first name', 'Shares children\'s names', 'Removal requested', 'Admin notes', 'Created', 'Updated'],
+        header: ['Registration ID', 'Status', 'Parent', 'Phone', 'Student names', 'Student count', 'Grades', 'Area', 'Area (as entered)', 'Latitude', 'Longitude', 'Coordinates', 'Google Maps', 'Apple Maps', 'Location source', 'Accuracy (m)', 'Building/Villa/Compound', 'Street', 'Landmark', 'Pickup notes', 'Shares pickup (same bus)', 'Shares first name (same bus)', 'Shares children\'s names (same bus)', 'Shares phone (same bus)', 'Removal requested', 'Admin notes', 'Created', 'Updated'],
         rows: x.rows.map((r) => {
           const pin = hasPin(r);
           return [r.registration_code, r.status, r.parent_name, r.phone, r.students.map((s) => s.name).join(', '), r.student_count, r.students.map((s) => s.grade || '').join(', '),
             r.area_name, r.area_entered, pin ? r.latitude : '', pin ? r.longitude : '', pin ? `${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)}` : '',
             pin ? googleMapsUrl(r.latitude, r.longitude) : '', pin ? appleMapsUrl(r.latitude, r.longitude) : '', r.location_source || '', r.location_accuracy_m ?? '',
-            r.building || '', r.street || '', r.landmark || '', r.pickup_notes || '', r.share_parent_name ? 'Yes' : 'No', r.share_student_names ? 'Yes' : 'No', r.removal_requested_at ? fmtDateTime(r.removal_requested_at) : '', r.admin_notes || '',
+            r.building || '', r.street || '', r.landmark || '', r.pickup_notes || '', r.share_pickup ? 'Yes' : 'No', r.share_parent_name ? 'Yes' : 'No', r.share_student_names ? 'Yes' : 'No', r.share_phone ? 'Yes' : 'No', r.removal_requested_at ? fmtDateTime(r.removal_requested_at) : '', r.admin_notes || '',
             fmtDateTime(r.created_at), fmtDateTime(r.updated_at)];
         }),
-        widths: [12, 9, 24, 16, 30, 8, 14, 16, 16, 11, 11, 22, 36, 40, 10, 10, 22, 18, 22, 28, 10, 12, 16, 24, 17, 17],
+        widths: [12, 9, 24, 16, 30, 8, 14, 16, 16, 11, 11, 22, 36, 40, 10, 10, 22, 18, 22, 28, 10, 10, 12, 10, 16, 24, 17, 17],
       },
       {
         name: 'Students',
@@ -721,5 +730,13 @@ async function exportExcel(e) {
     btn.textContent = label;
   }
 }
+
+initFleet({
+  call,
+  getRows: () => data.rows,
+  openDetail: (code) => openDetail(code),
+  switchTab: (tab) => switchTab(tab),
+  openDuplicatePairs: () => openPairs(data.flags.filter((f) => !f.resolved_at && f.kind === 'possible_duplicate')).length,
+});
 
 if (token()) load(); else renderGate();
