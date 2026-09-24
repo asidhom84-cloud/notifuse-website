@@ -1,7 +1,7 @@
 // SJAS Bus portal — shared helpers for the parent page and the admin page.
 // No secrets live here: every request is authorised server-side by sjasbus-api.
 
-import { t, tBus, isRtl } from './sjas-i18n.js?v=5';
+import { t, tBus, isRtl } from './sjas-i18n.js?v=6';
 
 const PROD_API = 'https://onfoclxqgiuzsdsybnyi.supabase.co/functions/v1/sjasbus-api';
 const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
@@ -142,10 +142,16 @@ function normText(s) {
 
 export function busKey(s) {
   const n = normText(s);
-  const k = ` ${n} `
-    .replace(/\s(bus|no|number|nr|num|route|رقم|باص|اتوبيس|أتوبيس|الباص)(?=\s)/g, ' ')
-    .replace(/\s+/g, '')
-    .replace(/^0+(?=\d)/, '');
+  const words = ` ${n} `
+    .replace(/\s(bus|no|number|nr|num|route|and|رقم|باص|اتوبيس|أتوبيس|الباص|و)(?=\s)/g, ' ')
+    .trim();
+  // Merged buses written as two numbers ("14/15", "15 and 14") -> "14/15".
+  const m = /^0*(\d{1,4})\s+0*(\d{1,4})$/.exec(words);
+  if (m && m[1] !== m[2]) {
+    const [a, b] = [Number(m[1]), Number(m[2])].sort((x, y) => x - y);
+    return `${a}/${b}`;
+  }
+  const k = words.replace(/\s+/g, '').replace(/^0+(?=\d)/, '');
   return k || n;
 }
 
@@ -590,6 +596,12 @@ export function submissionForm(root, opts) {
     if (!raw.trim()) { busHelp.textContent = ''; return; }
     const bus = busMap.get(key);
     busHelp.textContent = t('Listed as: {label}', { label: tBus(bus ? bus.bus_label : busLabel(raw)) });
+    // "14" or "15" alone when buses 14 and 15 were merged into "14/15": suggest the merged bus.
+    const merged = !bus && [...busMap.values()].find((b) => b.bus_key.includes('/') && b.bus_key.split('/').includes(key));
+    if (merged) {
+      const [a, b2] = merged.bus_key.split('/');
+      busHelp.innerHTML = `${esc(t('Buses {a} and {b} were merged. Did you mean', { a, b: b2 }))} <button type="button" class="sj-chip" data-pick-bus="${esc(merged.bus_key)}">${esc(tBus(merged.bus_label))}</button>?`;
+    }
     const dists = bus?.districts?.filter(Boolean) || [];
     const distInput = $('#f-district');
     if (dists.length && (!distInput.value.trim() || state.districtAuto)) {
@@ -626,6 +638,12 @@ export function submissionForm(root, opts) {
     if (m?.exact) $('#f-district').value = m.district;
   });
   form.addEventListener('click', (e) => {
+    const pickBus = e.target.closest('[data-pick-bus]');
+    if (pickBus) {
+      $('#f-bus').value = pickBus.dataset.pickBus;
+      updateBus();
+      return;
+    }
     const pick = e.target.closest('[data-pick]');
     if (!pick) return;
     $('#f-district').value = pick.dataset.pick;

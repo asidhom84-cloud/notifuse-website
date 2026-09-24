@@ -157,6 +157,7 @@ const AR = {
   'Also on {bus}:': 'أيضًا على {bus}:',
   'Will be listed as "{d}" (same spelling as other families).': 'سيظهر باسم "{d}" (بنفس كتابة الأسر الأخرى).',
   'Did you mean': 'هل تقصد',
+  'Buses {a} and {b} were merged. Did you mean': 'تم دمج الباصين {a} و{b}. هل تقصد',
   'Student {n} name': 'اسم الطالب {n}',
   'Remove student {n}': 'حذف الطالب {n}',
   '+ Add another student': '+ إضافة طالب آخر',
