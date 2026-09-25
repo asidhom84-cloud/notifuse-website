@@ -5,10 +5,10 @@
 //               family chose to share them. The server decides the bus from the
 //               PIN-verified session; the page can never ask for another bus.
 
-import { api, ApiError, copyText, esc, fmtDate, local, num, session, toast, tokenFrom } from './reg-common.js?v=16';
-import { registrationForm } from './reg-form.js?v=16';
-import { getLang, initLang, setLang, t } from './reg-i18n.js?v=16';
-import { renderDemandMap, renderMyBusRoute } from './reg-mybus.js?v=16';
+import { api, ApiError, copyText, esc, fmtDate, local, num, session, toast, tokenFrom } from './reg-common.js?v=17';
+import { registrationForm } from './reg-form.js?v=17';
+import { getLang, initLang, setLang, t } from './reg-i18n.js?v=17';
+import { renderDemandMap, renderMyBusRoute } from './reg-mybus.js?v=17';
 
 const VIEWER_KEY = 'busreg.viewer';
 const EDITOR_KEY = 'busreg.editor'; // 45 min, can edit (sessionStorage)

@@ -1,7 +1,7 @@
 // SJAS Bus Registration — Arabic strings for the administrator page.
 // Keys are the English text used in reg-admin.js / reg-fleet.js; {placeholders} stay as they are.
 
-import { addStrings } from './reg-i18n.js?v=16';
+import { addStrings } from './reg-i18n.js?v=17';
 
 addStrings({
   // Shell, sign-in, dashboard
@@ -485,6 +485,54 @@ addStrings({
   'Save settings': 'حفظ الإعدادات',
   'Change the school location? All morning routes will end at the new point (existing routes keep their saved line until regenerated).': 'تغيير موقع المدرسة؟ كل خطوط السير الصباحية ستنتهي عند النقطة الجديدة (خطوط السير الحالية تحتفظ بمسارها المحفوظ حتى يُعاد إنشاؤها).',
   'Settings saved': 'تم حفظ الإعدادات',
+
+  // Payments
+  '{n} EGP': '{n} ج.م',
+  'Cash': 'نقدًا',
+  'Bank transfer': 'تحويل بنكي',
+  'InstaPay': 'InstaPay',
+  'Card': 'بطاقة',
+  'Cheque': 'شيك',
+  'Other': 'أخرى',
+  'Paid': 'مدفوع',
+  'Partly paid': 'مدفوع جزئيًا',
+  'Not paid': 'غير مدفوع',
+  'Paid families': 'الأسر التي دفعت',
+  'Collected': 'المُحصَّل',
+  'Payment': 'الدفع',
+  'All payments': 'كل حالات الدفع',
+  'Not fully paid': 'لم يُكمل الدفع',
+  'Payments': 'المدفوعات',
+  'Due': 'المستحق',
+  '{fee} × {n} students': '{fee} × {n} طالب',
+  'Remaining': 'المتبقي',
+  'No fee per student set — any payment counts as paid. Set it in Route & assignment settings.': 'لم يُحدد رسم لكل طالب — أي مبلغ مدفوع يُعتبر "مدفوع". يمكنك تحديده من إعدادات خطوط السير والتوزيع.',
+  'Date': 'التاريخ',
+  'Amount': 'المبلغ',
+  'Method': 'طريقة الدفع',
+  'Cancelled': 'ملغي',
+  'Cancel': 'إلغاء',
+  'No payments recorded.': 'لا توجد مدفوعات مسجلة.',
+  'Amount (EGP)': 'المبلغ (ج.م)',
+  'e.g. receipt number': 'مثلاً رقم الإيصال',
+  'Record payment': 'تسجيل دفعة',
+  'Mark as paid in full ({amount})': 'تسجيل كمدفوع بالكامل ({amount})',
+  '{n} payment(s)': '{n} دفعة',
+  'Enter an amount greater than 0.': 'أدخل مبلغًا أكبر من 0.',
+  'Enter a valid payment date.': 'أدخل تاريخ دفع صحيحًا.',
+  'Record {amount} as paid by {code}?': 'تسجيل {amount} كمبلغ مدفوع من {code}؟',
+  'Payment recorded': 'تم تسجيل الدفعة',
+  'Payment cancelled': 'تم إلغاء الدفعة',
+  'Cancel this payment? It stays in the history but no longer counts. Reason (optional):': 'إلغاء هذه الدفعة؟ ستبقى في السجل لكن لن تُحسب. السبب (اختياري):',
+  'This payment was already cancelled.': 'هذه الدفعة ملغاة بالفعل.',
+  'Paid (EGP)': 'المدفوع (ج.م)',
+  'Payment status': 'حالة الدفع',
+  'Last payment': 'آخر دفعة',
+  'Recorded': 'تاريخ التسجيل',
+  'Cancel reason': 'سبب الإلغاء',
+  'Fee per student (EGP)': 'الرسوم لكل طالب (ج.م)',
+  'Used to show Paid / Partly paid / Not paid and the remaining amount. Leave empty if fees differ — then any recorded payment counts as paid.': 'تُستخدم لعرض مدفوع / مدفوع جزئيًا / غير مدفوع والمبلغ المتبقي. اتركها فارغة إذا كانت الرسوم مختلفة — وعندها أي مبلغ مسجل يُعتبر مدفوعًا.',
+  'Fee per student must be a number (or empty).': 'الرسوم لكل طالب يجب أن تكون رقمًا (أو فارغة).',
 
   // Common API messages shown to the admin
   'This bus still has families assigned.': 'ما زالت هناك أسر على هذا الباص.',

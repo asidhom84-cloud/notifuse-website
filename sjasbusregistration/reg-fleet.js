@@ -1,11 +1,11 @@
 // SJAS Bus Registration — admin: fleet, bus assignment, routes, settings, driver sheets.
 
-import { appleMapsUrl, distanceM, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=16';
-import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=16';
-import { hull, PALETTE } from './reg-cluster.js?v=16';
-import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=16';
-import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=16';
-import { t } from './reg-i18n.js?v=16';
+import { appleMapsUrl, distanceM, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=17';
+import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=17';
+import { hull, PALETTE } from './reg-cluster.js?v=17';
+import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=17';
+import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=17';
+import { t } from './reg-i18n.js?v=17';
 
 let ctx = null;          // { call, getRows, openDetail, refreshAll }
 let fleet = null;        // /admin/fleet payload
@@ -799,6 +799,8 @@ export async function renderSettings(panel) {
     </div>
     <div class="sj-row">
       <div class="sj-field"><label>${tt('Default spare seats (%)')}</label><input name="default_reserve_pct" type="number" min="0" max="50" value="${s.default_reserve_pct}"></div>
+      <div class="sj-field"><label>${tt('Fee per student (EGP)')} <span class="sj-opt">(${tt('optional')})</span></label><input name="fee_per_student" type="number" min="0" step="0.01" inputmode="decimal" dir="ltr" value="${s.fee_per_student ?? ''}">
+        <div class="sj-help">${tt('Used to show Paid / Partly paid / Not paid and the remaining amount. Leave empty if fees differ — then any recorded payment counts as paid.')}</div></div>
     </div>
     <div class="sj-row">
       <div class="sj-field"><label>${tt('Time per stop (seconds)')}</label><input name="dwell_seconds" type="number" min="0" max="900" value="${s.dwell_seconds}"></div>

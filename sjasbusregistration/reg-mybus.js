@@ -3,9 +3,9 @@
 //   renderMyBusRoute: the family's OWN bus route; the server decides which bus and has already
 //   applied every family's sharing choices (hidden pickups arrive displaced and anonymous).
 
-import { esc, num } from './reg-common.js?v=16';
-import { t } from './reg-i18n.js?v=16';
-import { addTiles, loadLeaflet } from './reg-map.js?v=16';
+import { esc, num } from './reg-common.js?v=17';
+import { t } from './reg-i18n.js?v=17';
+import { addTiles, loadLeaflet } from './reg-map.js?v=17';
 
 const schoolIcon = (L, name) => L.divIcon({ className: '', html: `<div class="rg-centroid">🏫 <bdi>${esc(name)}</bdi></div>`, iconSize: [160, 20], iconAnchor: [80, 10] });
 

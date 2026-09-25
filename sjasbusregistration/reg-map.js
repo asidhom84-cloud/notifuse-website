@@ -2,8 +2,8 @@
 // No API keys and no personal data are sent to map providers: only map tiles
 // for the visible area and the words typed into Search.
 
-import { esc, GREATER_CAIRO, isFar, loadCss, loadScript, openLayer, toast } from './reg-common.js?v=16';
-import { getLang, t } from './reg-i18n.js?v=16';
+import { esc, GREATER_CAIRO, isFar, loadCss, loadScript, openLayer, toast } from './reg-common.js?v=17';
+import { getLang, t } from './reg-i18n.js?v=17';
 
 const CDN = 'https://cdnjs.cloudflare.com/ajax/libs';
 

@@ -4,13 +4,13 @@
 import {
   api, appleMapsUrl, copyText, downloadExcel, esc, fmtDate, fmtDateTime, googleMapsUrl, num,
   openModal, session, toast, today, tokenFrom,
-} from './reg-common.js?v=16';
-import { registrationForm } from './reg-form.js?v=16';
-import { addTiles, loadMarkerCluster, renderPreview } from './reg-map.js?v=16';
-import { hull, summarise } from './reg-cluster.js?v=16';
-import { cleanupFleet, initFleet, renderBuses, renderRoutes, renderSettings } from './reg-fleet.js?v=16';
-import { getLang, initLang, setLang, t } from './reg-i18n.js?v=16';
-import './reg-admin-i18n.js?v=16';
+} from './reg-common.js?v=17';
+import { registrationForm } from './reg-form.js?v=17';
+import { addTiles, loadMarkerCluster, renderPreview } from './reg-map.js?v=17';
+import { hull, summarise } from './reg-cluster.js?v=17';
+import { cleanupFleet, initFleet, renderBuses, renderRoutes, renderSettings } from './reg-fleet.js?v=17';
+import { getLang, initLang, setLang, t } from './reg-i18n.js?v=17';
+import './reg-admin-i18n.js?v=17';
 
 const ADMIN_KEY = 'busreg.admin';
 const app = document.getElementById('rg-app');
@@ -34,7 +34,7 @@ langBtn.addEventListener('click', () => {
   if (!token()) renderGate(); else if (data) renderDashboard(); else load();
 });
 
-const ui = { tab: 'regs', area: 'all', q: '', status: 'visible', sort: 'date', clusterOn: false, eps: 500 };
+const ui = { tab: 'regs', area: 'all', q: '', status: 'visible', sort: 'date', pay: 'all', clusterOn: false, eps: 500 };
 let data = null;
 let mapState = null;
 
@@ -75,6 +75,25 @@ const STATUS_BADGE = {
 const statusText = (s) => t({ active: 'Active', hidden: 'Hidden', deleted: 'Deleted' }[s] || s);
 const actorText = (a) => t({ parent: 'Parent', admin: 'Admin', system: 'System' }[a] || a);
 const yesNo = (v) => t(v ? 'Yes' : 'No');
+
+// Payments (admin-only). With a fee per student set, "paid" means the family's payments
+// cover fee × students; without one, any recorded payment counts as paid.
+const moneyFmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+const money = (n) => t('{n} EGP', { n: moneyFmt.format(Number(n) || 0) });
+const PAY_METHODS = ['cash', 'transfer', 'instapay', 'card', 'cheque', 'other'];
+const methodText = (m) => t({ cash: 'Cash', transfer: 'Bank transfer', instapay: 'InstaPay', card: 'Card', cheque: 'Cheque', other: 'Other' }[m] || m);
+function payInfo(r, fee = data?.fee_per_student) {
+  const paid = Number(r.paid_total) || 0;
+  const due = fee != null ? Math.round(fee * (r.student_count || 0) * 100) / 100 : null;
+  const status = due != null ? (paid >= due - 0.005 && (paid > 0 || due === 0) ? 'paid' : paid > 0 ? 'partial' : 'unpaid') : paid > 0 ? 'paid' : 'unpaid';
+  return { paid, due, status, remaining: due != null ? Math.max(0, Math.round((due - paid) * 100) / 100) : null };
+}
+const payBadge = (st) => ({
+  paid: `<span class="sj-badge sj-badge-ok">${tt('Paid')}</span>`,
+  partial: `<span class="sj-badge sj-badge-warn">${tt('Partly paid')}</span>`,
+  unpaid: `<span class="sj-badge">${tt('Not paid')}</span>`,
+}[st]);
+const payStatusText = (st) => t({ paid: 'Paid', partial: 'Partly paid', unpaid: 'Not paid' }[st]);
 
 // ---------------------------------------------------------------------------
 // Login
@@ -159,6 +178,8 @@ function renderDashboard() {
   const areasRepresented = new Set(act.map((r) => r.area_id)).size;
   const dupPairs = openPairs(data.flags.filter((f) => !f.resolved_at)).length;
   const removals = data.rows.filter((r) => r.removal_requested_at && r.status !== 'deleted').length;
+  const paidFamilies = act.filter((r) => payInfo(r).status === 'paid').length;
+  const collected = act.reduce((n, r) => n + (Number(r.paid_total) || 0), 0);
   const card = (k, v, extra = '', goto = '') => goto
     ? `<button type="button" class="sj-stat sj-stat-link ${extra}" data-goto="${goto}"><div class="k">${k} →</div><div class="v">${v}</div></button>`
     : `<div class="sj-stat ${extra}"><div class="k">${k}</div><div class="v">${v}</div></div>`;
@@ -173,6 +194,8 @@ function renderDashboard() {
       ${card(tt('Missing coordinates'), num(act.length - withPin), act.length - withPin ? 'sj-stat-warn' : '', 'regs-missing')}
       ${card(tt('Possible duplicates'), num(dupPairs), dupPairs ? 'sj-stat-warn' : '', 'dups')}
       ${card(tt('Removal requests'), num(removals), removals ? 'sj-stat-warn' : '', 'removals')}
+      ${card(tt('Paid families'), `${num(paidFamilies)} / ${num(act.length)}`, '', 'regs-unpaid')}
+      ${card(tt('Collected'), esc(money(collected)))}
     </section>
     <div class="sj-actions">
       <button type="button" class="sj-btn sj-btn-primary" data-excel>⬇ ${tt('Export Excel')}</button>
@@ -203,7 +226,7 @@ function renderDashboard() {
     if (tab) switchTab(tab.dataset.tab);
   });
   app.querySelectorAll('[data-goto]').forEach((b) => b.addEventListener('click', () => {
-    if (b.dataset.goto === 'regs-missing') { ui.status = 'missing'; switchTab('regs'); } else switchTab(b.dataset.goto);
+    if (b.dataset.goto === 'regs-missing') { ui.status = 'missing'; switchTab('regs'); } else if (b.dataset.goto === 'regs-unpaid') { ui.status = 'active'; ui.pay = 'notpaid'; switchTab('regs'); } else switchTab(b.dataset.goto);
   }));
   app.querySelector('[data-excel]').addEventListener('click', exportExcel);
   app.querySelector('[data-reload]').addEventListener('click', () => refresh().then(() => toast(t('Refreshed'))).catch((e) => toast(t(e.message))));
@@ -251,6 +274,10 @@ function renderRegs(panel) {
         <option value="visible">${tt('Active + hidden')}</option><option value="active">${tt('Active')}</option><option value="hidden">${tt('Hidden')}</option>
         <option value="deleted">${tt('Deleted')}</option><option value="missing">${tt('Missing coordinates')}</option><option value="all">${tt('All')}</option>
       </select>
+      <select data-pay aria-label="${tt('Payment')}">
+        <option value="all">${tt('All payments')}</option><option value="paid">${tt('Paid')}</option><option value="partial">${tt('Partly paid')}</option>
+        <option value="unpaid">${tt('Not paid')}</option><option value="notpaid">${tt('Not fully paid')}</option>
+      </select>
       <select data-sort aria-label="${tt('Sort')}">
         <option value="date">${tt('Registration date (oldest first)')}</option><option value="date_desc">${tt('Registration date (newest first)')}</option>
         <option value="area">${tt('Area')}</option><option value="parent">${tt('Parent A–Z')}</option><option value="updated">${tt('Last updated')}</option>
@@ -260,6 +287,9 @@ function renderRegs(panel) {
   const q = panel.querySelector('input');
   const st = panel.querySelector('[data-status]');
   const so = panel.querySelector('[data-sort]');
+  const pa = panel.querySelector('[data-pay]');
+  pa.value = ui.pay;
+  pa.addEventListener('change', () => { ui.pay = pa.value; renderRegList(panel); });
   st.value = ui.status;
   so.value = ui.sort;
   q.addEventListener('input', () => { ui.q = q.value; renderRegList(panel); });
@@ -280,6 +310,12 @@ function renderRegList(panel) {
       default: return r.status === ui.status;
     }
   });
+  if (ui.pay !== 'all') {
+    rows = rows.filter((r) => {
+      const st = payInfo(r).status;
+      return ui.pay === 'notpaid' ? st !== 'paid' : st === ui.pay;
+    });
+  }
   if (q) {
     rows = rows.filter((r) => [r.registration_code, r.parent_name, ...(r.student_names || [])].join(' ').toLowerCase().includes(q)
       || (qDigits.length >= 3 && String(r.phone).replace(/\D/g, '').includes(qDigits)));
@@ -294,7 +330,7 @@ function renderRegList(panel) {
   rows.sort(sorts[ui.sort] || sorts.date);
   panel.querySelector('[data-list]').innerHTML = rows.length ? `
     <div class="sj-tablewrap"><table class="sj-table">
-      <thead><tr><th>${tt('ID')}</th><th>${tt('Parent')}</th><th>${tt('Phone')}</th><th>${tt('Students')}</th><th class="r">${tt('Count')}</th><th>${tt('Area')}</th><th>${tt('Location')}</th><th>${tt('Submitted')}</th><th>${tt('Updated')}</th></tr></thead>
+      <thead><tr><th>${tt('ID')}</th><th>${tt('Parent')}</th><th>${tt('Phone')}</th><th>${tt('Students')}</th><th class="r">${tt('Count')}</th><th>${tt('Area')}</th><th>${tt('Location')}</th><th>${tt('Paid')}</th><th>${tt('Submitted')}</th><th>${tt('Updated')}</th></tr></thead>
       <tbody>${rows.map((r) => `<tr class="sj-clickable" tabindex="0" data-open="${esc(r.registration_code)}">
         <td class="sj-code">${esc(r.registration_code)}${r.status !== 'active' ? `<span class="sj-sub">${STATUS_BADGE[r.status]}</span>` : ''}</td>
         <td class="sj-parent">${esc(r.parent_name)}
@@ -305,9 +341,11 @@ function renderRegList(panel) {
         <td class="r sj-num">${r.student_count}</td>
         <td>${esc(r.area_name)}${r.area_listed ? '' : ` <span class="sj-badge sj-badge-warn">${tt('new')}</span>`}</td>
         <td>${hasPin(r) ? `<span class="sj-badge sj-badge-ok">✓ ${tt('pin')}</span>${r.far_confirmed ? ` <span class="sj-badge sj-badge-warn">${tt('far')}</span>` : ''}<span class="sj-sub">${tt(r.location_source || '')}${r.location_accuracy_m ? ` ±${Math.round(r.location_accuracy_m)} ${tt('m')}` : ''}</span>` : `<span class="sj-badge sj-badge-danger">${tt('missing')}</span>`}</td>
+        <td>${(() => { const p = payInfo(r); return `${payBadge(p.status)}${p.paid ? `<span class="sj-sub sj-num">${esc(money(p.paid))}${p.due != null ? ` / ${esc(money(p.due))}` : ''}</span>` : p.due != null ? `<span class="sj-sub sj-num">${esc(money(p.due))}</span>` : ''}`; })()}</td>
         <td class="sj-num">${esc(fmtDate(r.created_at))}</td>
         <td class="sj-num">${esc(fmtDateTime(r.updated_at))}</td></tr>`).join('')}</tbody>
-      <tfoot><tr><td colspan="4" class="sj-totallabel">${tt('{n} registrations shown', { n: rows.length })}</td><td class="r sj-num">${num(rows.reduce((n, r) => n + r.student_count, 0))}</td><td colspan="4"></td></tr></tfoot>
+      <tfoot><tr><td colspan="4" class="sj-totallabel">${tt('{n} registrations shown', { n: rows.length })}</td><td class="r sj-num">${num(rows.reduce((n, r) => n + r.student_count, 0))}</td><td colspan="2"></td>
+        <td class="sj-num"><b>${esc(money(rows.reduce((n, r) => n + (Number(r.paid_total) || 0), 0)))}</b></td><td colspan="2"></td></tr></tfoot>
     </table></div>` : `<div class="sj-empty">${tt('No registrations match.')}</div>`;
   panel.querySelectorAll('[data-open]').forEach((tr) => {
     tr.addEventListener('click', (e) => { if (!e.target.closest('a')) openDetail(tr.dataset.open); });
@@ -586,6 +624,8 @@ function describeAudit(a) {
     case 'sessions_revoked': return tt('Parent signed out all devices');
     case 'flag_resolved': return tt('Duplicate warning reviewed');
     case 'flag_reopened': return tt('Duplicate warning reopened');
+    case 'payment_recorded': return `${tt('Payment recorded')}: ${esc(money(n?.amount))} · ${esc(n?.paid_on || '')} · ${esc(methodText(n?.method))}${n?.note ? ` — ${esc(n.note)}` : ''}`;
+    case 'payment_voided': return `${tt('Payment cancelled')}: ${esc(money(o?.amount))} · ${esc(o?.paid_on || '')}${n?.reason ? ` — ${esc(n.reason)}` : ''}`;
     default: return esc(a.action);
   }
 }
@@ -633,6 +673,7 @@ function renderDetail(body, d, modal, reload) {
       <dt>${tt('Last updated')}</dt><dd>${esc(fmtDateTime(d.updated_at))}</dd>
     </dl>
     ${pin ? '<div class="rg-preview" style="height:220px"></div>' : ''}
+    ${paymentsSection(d)}
     <div class="sj-section"><h3>${tt('Admin note')} <span class="sj-opt">(${tt('internal')})</span></h3>
       <textarea class="sj-input" data-notes maxlength="4000">${esc(d.admin_notes || '')}</textarea>
       <div style="margin-top:8px"><button type="button" class="sj-btn sj-btn-sm" data-act="notes">${tt('Save note')}</button></div></div>
@@ -652,7 +693,21 @@ function renderDetail(body, d, modal, reload) {
     try {
       const code = d.registration_code;
       if (b.dataset.act === 'edit') return renderEdit(body, d, reload);
-      if (['hidden', 'active', 'deleted'].includes(b.dataset.act)) {
+      if (b.dataset.act === 'pay' || b.dataset.act === 'payfull') {
+        const f = body.querySelector('[data-payform]');
+        const p = payInfo(d, d.fee_per_student);
+        const amount = b.dataset.act === 'payfull' ? p.remaining : Number(f.amount.value);
+        if (!(amount > 0)) return toast(t('Enter an amount greater than 0.'));
+        if (b.dataset.act === 'payfull' && !confirm(t('Record {amount} as paid by {code}?', { amount: money(amount), code }))) return;
+        b.disabled = true;
+        await call(`/admin/registration/${code}/payments`, { method: 'POST', body: { amount, paid_on: f.paid_on.value, method: f.method.value, note: f.note.value } });
+        toast(t('Payment recorded'));
+      } else if (b.dataset.voidPay) {
+        const reason = prompt(t('Cancel this payment? It stays in the history but no longer counts. Reason (optional):'));
+        if (reason === null) return;
+        await call(`/admin/payments/${b.dataset.voidPay}/void`, { method: 'POST', body: { reason } });
+        toast(t('Payment cancelled'));
+      } else if (['hidden', 'active', 'deleted'].includes(b.dataset.act)) {
         const msg = { hidden: 'Hide this registration? It will no longer count in totals.', active: 'Restore this registration?', deleted: 'Delete this registration? It is kept for the audit trail and can be restored.' }[b.dataset.act];
         if (!confirm(t(msg))) return;
         await call(`/admin/registration/${code}/status`, { method: 'POST', body: { status: b.dataset.act } });
@@ -672,6 +727,30 @@ function renderDetail(body, d, modal, reload) {
       refresh();
     } catch (err) { toast(t(err.message)); }
   };
+}
+
+function paymentsSection(d) {
+  const p = payInfo(d, d.fee_per_student);
+  const today = new Date().toISOString().slice(0, 10);
+  const live = d.payments.filter((x) => !x.voided_at);
+  return `<div class="sj-section"><h3>${tt('Payments')} ${payBadge(p.status)}</h3>
+    <p style="margin:0 0 8px"><b>${tt('Paid')}: ${esc(money(p.paid))}</b>${p.due != null ? ` · ${tt('Due')}: ${esc(money(p.due))} (${tt('{fee} × {n} students', { fee: money(d.fee_per_student), n: d.student_count })})${p.remaining ? ` · <b style="color:var(--danger)">${tt('Remaining')}: ${esc(money(p.remaining))}</b>` : ''}` : ` <span class="sj-muted sj-small">(${tt('No fee per student set — any payment counts as paid. Set it in Route & assignment settings.')})</span>`}</p>
+    ${d.payments.length ? `<div class="sj-tablewrap"><table class="sj-table"><thead><tr><th>${tt('Date')}</th><th class="r">${tt('Amount')}</th><th>${tt('Method')}</th><th>${tt('Note')}</th><th></th></tr></thead>
+      <tbody>${d.payments.map((x) => `<tr style="${x.voided_at ? 'opacity:.55;text-decoration:line-through' : ''}">
+        <td class="sj-num">${esc(fmtDate(x.paid_on))}</td><td class="r sj-num">${esc(money(x.amount))}</td><td>${esc(methodText(x.method))}</td><td>${esc(x.note || '')}</td>
+        <td>${x.voided_at ? `<span class="sj-badge" style="text-decoration:none">${tt('Cancelled')}</span>${x.void_reason ? ` <span class="sj-small">${esc(x.void_reason)}</span>` : ''}` : `<button type="button" class="sj-btn sj-btn-sm sj-btn-ghost" data-void-pay="${esc(x.id)}">${tt('Cancel')}</button>`}</td></tr>`).join('')}</tbody></table></div>`
+      : `<p class="sj-muted">${tt('No payments recorded.')}</p>`}
+    <form class="sj-row" data-payform onsubmit="return false" style="margin-top:10px;align-items:flex-end;flex-wrap:wrap">
+      <div class="sj-field" style="min-width:120px"><label>${tt('Amount (EGP)')}</label><input name="amount" type="number" min="0" step="0.01" inputmode="decimal" value="${p.remaining || ''}" dir="ltr"></div>
+      <div class="sj-field" style="min-width:140px"><label>${tt('Date')}</label><input name="paid_on" type="date" value="${today}" max="${today}"></div>
+      <div class="sj-field" style="min-width:130px"><label>${tt('Method')}</label><select name="method">${PAY_METHODS.map((m) => `<option value="${m}">${esc(methodText(m))}</option>`).join('')}</select></div>
+      <div class="sj-field" style="flex:1;min-width:160px"><label>${tt('Note')} <span class="sj-opt">(${tt('optional')})</span></label><input name="note" maxlength="300" placeholder="${tt('e.g. receipt number')}"></div>
+    </form>
+    <div class="sj-inline" style="flex-wrap:wrap">
+      <button type="button" class="sj-btn sj-btn-sm sj-btn-primary" data-act="pay">${tt('Record payment')}</button>
+      ${p.remaining ? `<button type="button" class="sj-btn sj-btn-sm" data-act="payfull">${tt('Mark as paid in full ({amount})', { amount: money(p.remaining) })}</button>` : ''}
+      ${live.length ? `<span class="sj-small sj-muted">${tt('{n} payment(s)', { n: live.length })}</span>` : ''}
+    </div></div>`;
 }
 
 function renderEdit(body, d, reload) {
@@ -709,16 +788,24 @@ async function exportExcel(e) {
     await downloadExcel(`SJAS-Bus-Registrations-${today()}.xlsx`, [
       {
         name: t('Registrations'),
-        header: H(['Registration ID', 'Status', 'Parent', 'Phone', 'Student names', 'Student count', 'Grades', 'Area', 'Area (as entered)', 'Latitude', 'Longitude', 'Coordinates', 'Google Maps', 'Apple Maps', 'Location source', 'Accuracy (m)', 'Building/Villa/Compound', 'Street', 'Landmark', 'Pickup notes', 'Shares pickup (same bus)', 'Shares first name (same bus)', "Shares children's names (same bus)", 'Shares phone (same bus)', 'Removal requested', 'Admin notes', 'Created', 'Updated']),
+        header: H(['Registration ID', 'Status', 'Parent', 'Phone', 'Student names', 'Student count', 'Grades', 'Area', 'Area (as entered)', 'Latitude', 'Longitude', 'Coordinates', 'Google Maps', 'Apple Maps', 'Location source', 'Accuracy (m)', 'Building/Villa/Compound', 'Street', 'Landmark', 'Pickup notes', 'Shares pickup (same bus)', 'Shares first name (same bus)', "Shares children's names (same bus)", 'Shares phone (same bus)', 'Removal requested', 'Admin notes', 'Paid (EGP)', 'Payment status', 'Last payment', 'Created', 'Updated']),
         rows: x.rows.map((r) => {
           const pin = hasPin(r);
           return [r.registration_code, statusText(r.status), r.parent_name, r.phone, r.students.map((s) => s.name).join(', '), r.student_count, r.students.map((s) => s.grade || '').join(', '),
             r.area_name, r.area_entered, pin ? r.latitude : '', pin ? r.longitude : '', pin ? `${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)}` : '',
             pin ? googleMapsUrl(r.latitude, r.longitude) : '', pin ? appleMapsUrl(r.latitude, r.longitude) : '', t(r.location_source || ''), r.location_accuracy_m ?? '',
             r.building || '', r.street || '', r.landmark || '', r.pickup_notes || '', yesNo(r.share_pickup), yesNo(r.share_parent_name), yesNo(r.share_student_names), yesNo(r.share_phone), r.removal_requested_at ? fmtDateTime(r.removal_requested_at) : '', r.admin_notes || '',
+            Number(r.paid_total) || 0, payStatusText(payInfo(r, x.fee_per_student).status), r.last_paid_on ? fmtDate(r.last_paid_on) : '',
             fmtDateTime(r.created_at), fmtDateTime(r.updated_at)];
         }),
-        widths: [12, 9, 24, 16, 30, 8, 14, 16, 16, 11, 11, 22, 36, 40, 10, 10, 22, 18, 22, 28, 10, 10, 12, 10, 16, 24, 17, 17],
+        widths: [12, 9, 24, 16, 30, 8, 14, 16, 16, 11, 11, 22, 36, 40, 10, 10, 22, 18, 22, 28, 10, 10, 12, 10, 16, 24, 11, 12, 12, 17, 17],
+      },
+      {
+        name: t('Payments'),
+        header: H(['Registration ID', 'Parent', 'Date', 'Amount (EGP)', 'Method', 'Note', 'Recorded', 'Cancelled', 'Cancel reason']),
+        rows: x.payments.map((pm) => [pm.registration_code || '', codeName.get(pm.registration_code) || '', fmtDate(pm.paid_on), pm.amount, methodText(pm.method), pm.note || '',
+          fmtDateTime(pm.created_at), pm.voided_at ? fmtDateTime(pm.voided_at) : '', pm.void_reason || '']),
+        widths: [12, 24, 12, 12, 14, 28, 17, 17, 24],
       },
       {
         name: t('Students'),
