@@ -56,6 +56,16 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://notifamily.net/network-pulse/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://notifamily.net/network-pulse/support/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://notifamily.net/network-pulse/privacy/</loc>
     <changefreq>yearly</changefreq>
     <priority>0.7</priority>
