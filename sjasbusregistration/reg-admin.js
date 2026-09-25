@@ -4,13 +4,13 @@
 import {
   api, appleMapsUrl, copyText, downloadExcel, esc, fmtDate, fmtDateTime, googleMapsUrl, num,
   openModal, session, toast, today, tokenFrom,
-} from './reg-common.js?v=17';
-import { registrationForm } from './reg-form.js?v=17';
-import { addTiles, loadMarkerCluster, renderPreview } from './reg-map.js?v=17';
-import { hull, summarise } from './reg-cluster.js?v=17';
-import { cleanupFleet, initFleet, renderBuses, renderRoutes, renderSettings } from './reg-fleet.js?v=17';
-import { getLang, initLang, setLang, t } from './reg-i18n.js?v=17';
-import './reg-admin-i18n.js?v=17';
+} from './reg-common.js?v=18';
+import { registrationForm } from './reg-form.js?v=18';
+import { addTiles, loadMarkerCluster, renderPreview } from './reg-map.js?v=18';
+import { hull, summarise } from './reg-cluster.js?v=18';
+import { cleanupFleet, initFleet, renderBuses, renderRoutes, renderSettings } from './reg-fleet.js?v=18';
+import { getLang, initLang, setLang, t } from './reg-i18n.js?v=18';
+import './reg-admin-i18n.js?v=18';
 
 const ADMIN_KEY = 'busreg.admin';
 const app = document.getElementById('rg-app');
@@ -695,7 +695,7 @@ function renderDetail(body, d, modal, reload) {
       if (b.dataset.act === 'edit') return renderEdit(body, d, reload);
       if (b.dataset.act === 'pay' || b.dataset.act === 'payfull') {
         const f = body.querySelector('[data-payform]');
-        const p = payInfo(d, d.fee_per_student);
+        const p = detailPay(d);
         const amount = b.dataset.act === 'payfull' ? p.remaining : Number(f.amount.value);
         if (!(amount > 0)) return toast(t('Enter an amount greater than 0.'));
         if (b.dataset.act === 'payfull' && !confirm(t('Record {amount} as paid by {code}?', { amount: money(amount), code }))) return;
@@ -729,8 +729,11 @@ function renderDetail(body, d, modal, reload) {
   };
 }
 
+// The detail view carries the payment list; its total comes from the live (not cancelled) entries.
+const detailPay = (d) => payInfo({ ...d, paid_total: d.payments.filter((x) => !x.voided_at).reduce((n, x) => n + Number(x.amount), 0) }, d.fee_per_student);
+
 function paymentsSection(d) {
-  const p = payInfo(d, d.fee_per_student);
+  const p = detailPay(d);
   const today = new Date().toISOString().slice(0, 10);
   const live = d.payments.filter((x) => !x.voided_at);
   return `<div class="sj-section"><h3>${tt('Payments')} ${payBadge(p.status)}</h3>
