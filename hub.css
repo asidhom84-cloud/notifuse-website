@@ -463,6 +463,18 @@ body.page-hub.page-company .hub-orb-d {
   background: radial-gradient(circle, rgba(124, 58, 237, 0.16), transparent 70%);
 }
 
+.company-hero-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 3.2vw, 2rem);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.85rem;
+  background: linear-gradient(90deg, #2563eb 0%, #7c3aed 55%, #0d9488 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .page-company .company-hero h1 {
   font-family: var(--font-display);
   font-size: clamp(1.85rem, 4.6vw, 3rem);
