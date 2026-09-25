@@ -3,9 +3,9 @@
 //   renderMyBusRoute: the family's OWN bus route; the server decides which bus and has already
 //   applied every family's sharing choices (hidden pickups arrive displaced and anonymous).
 
-import { esc, num } from './reg-common.js?v=18';
-import { t } from './reg-i18n.js?v=18';
-import { addTiles, loadLeaflet } from './reg-map.js?v=18';
+import { esc, num } from './reg-common.js?v=19';
+import { t } from './reg-i18n.js?v=19';
+import { addTiles, loadLeaflet } from './reg-map.js?v=19';
 
 const schoolIcon = (L, name) => L.divIcon({ className: '', html: `<div class="rg-centroid">🏫 <bdi>${esc(name)}</bdi></div>`, iconSize: [160, 20], iconAnchor: [80, 10] });
 
@@ -62,7 +62,7 @@ export async function renderMyBusRoute(el, r) {
     if (s.children) lines.push(s.children.map((c) => `<bdi>${esc(c)}</bdi>`).join(', '));
     if (s.phone) lines.push(`<a href="tel:${esc(s.phone)}" dir="ltr">${esc(s.phone)}</a>`);
     lines.push(esc(s.students === 1 ? t('1 student') : t('{n} students', { n: s.students })));
-    if (s.you && s.eta) lines.push(esc(t('Estimated pickup {time}', { time: s.eta })));
+    if (s.you && s.eta) lines.push(esc(t(r.direction === 'afternoon' ? 'Estimated drop-off {time}' : 'Estimated pickup {time}', { time: s.eta })));
     if (s.approximate) lines.push(`<span style="color:#667085">${esc(t('Approximate position — this family keeps its exact pickup point private.'))}</span>`);
     m.bindPopup(`<div class="rg-popup">${lines.join('<br>')}</div>`);
   }

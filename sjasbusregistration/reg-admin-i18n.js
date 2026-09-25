@@ -1,7 +1,7 @@
 // SJAS Bus Registration — Arabic strings for the administrator page.
 // Keys are the English text used in reg-admin.js / reg-fleet.js; {placeholders} stay as they are.
 
-import { addStrings } from './reg-i18n.js?v=18';
+import { addStrings } from './reg-i18n.js?v=19';
 
 addStrings({
   // Shell, sign-in, dashboard
@@ -442,6 +442,29 @@ addStrings({
   'Drag or use ▲▼ to reorder. 🔒 keeps a stop in place when re-optimising. × removes the family from this bus. After reordering, use “Update road line”, then “Save draft”.': 'اسحب أو استخدم ▲▼ لتغيير الترتيب. 🔒 يثبّت المحطة في مكانها عند إعادة الترتيب. × يزيل الأسرة من هذا الباص. بعد تغيير الترتيب اضغط "تحديث خط الطريق" ثم "حفظ كمسودة".',
   'No route yet. Click “Generate suggested route”.': 'لا يوجد خط سير بعد. اضغط "إنشاء خط سير مقترح".',
   'Remove {code} from this bus? The family becomes unassigned (you can assign it to another bus in the Buses tab).': 'إزالة {code} من هذا الباص؟ ستصبح الأسرة بدون باص (يمكنك توزيعها على باص آخر من تبويب الباصات).',
+
+  // Afternoon routes
+  'Trip': 'الرحلة',
+  'Morning (home → school)': 'الصباح (البيت ← المدرسة)',
+  'Afternoon (school → home)': 'بعد الظهر (المدرسة ← البيت)',
+  'leaves school at': 'التحرك من المدرسة الساعة',
+  'first drop-off': 'أول نزول',
+  'last drop-off': 'آخر نزول',
+  'driver back at the end point ~{time}': 'عودة السائق لنقطة النهاية ~{time}',
+  'starts at {school} (leaves {time})': 'يبدأ من {school} (التحرك {time})',
+  'You have unsaved changes on this route. Switch anyway?': 'لديك تغييرات غير محفوظة على خط السير هذا. هل تريد التبديل على أي حال؟',
+  'Approve the afternoon route for {bus}? Parents on this bus will then see their drop-off stop and estimated drop-off time.': 'اعتماد خط سير العودة لـ {bus}؟ سيرى أولياء أمور هذا الباص محطة النزول وموعد النزول التقريبي.',
+  'End': 'النهاية',
+  'Driver end point': 'نقطة نهاية السائق',
+  'back ~{time}': 'العودة ~{time}',
+  'drop-off ~{time}': 'النزول ~{time}',
+  'School — leave': 'المدرسة — التحرك',
+  'Drop-off ~': 'النزول ~',
+  'Leave school {time}': 'التحرك من المدرسة {time}',
+  'First drop-off {time}': 'أول نزول {time}',
+  'Last drop-off {time}': 'آخر نزول {time}',
+  'Afternoon departure from school': 'موعد التحرك من المدرسة (بعد الظهر)',
+  'Departure time must be HH:MM': 'موعد التحرك يجب أن يكون بصيغة HH:MM',
 
   // Driver sheet
   'Driver start point — leave': 'نقطة انطلاق السائق — التحرك',

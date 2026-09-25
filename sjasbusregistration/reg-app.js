@@ -5,10 +5,10 @@
 //               family chose to share them. The server decides the bus from the
 //               PIN-verified session; the page can never ask for another bus.
 
-import { api, ApiError, copyText, esc, fmtDate, local, num, session, toast, tokenFrom } from './reg-common.js?v=18';
-import { registrationForm } from './reg-form.js?v=18';
-import { getLang, initLang, setLang, t } from './reg-i18n.js?v=18';
-import { renderDemandMap, renderMyBusRoute } from './reg-mybus.js?v=18';
+import { api, ApiError, copyText, esc, fmtDate, local, num, session, toast, tokenFrom } from './reg-common.js?v=19';
+import { registrationForm } from './reg-form.js?v=19';
+import { getLang, initLang, setLang, t } from './reg-i18n.js?v=19';
+import { renderDemandMap, renderMyBusRoute } from './reg-mybus.js?v=19';
 
 const VIEWER_KEY = 'busreg.viewer';
 const EDITOR_KEY = 'busreg.editor'; // 45 min, can edit (sessionStorage)
@@ -255,15 +255,13 @@ function statusCard(me) {
   const st = me.status_info || {};
   const more = esc(t('More registrations may be added in your area.'));
   const bus = st.bus;
-  const r = st.route;
-  let routeHtml = '';
-  if (bus) {
-    if (!r || r.state === 'preparing') routeHtml = `<b>${esc(t('Being prepared'))}</b>`;
-    else if (r.state === 'being_added') routeHtml = `<b>${esc(t('Being added to the route'))}</b><br><span class="sj-muted">${esc(t('Your family has been placed on this bus. Your stop will be added when the route is next updated.'))}</span>`;
-    else if (r.state === 'needs_review') routeHtml = `<b>${esc(t('Needs review'))}</b><br><span class="sj-muted">${esc(t('Your pickup point changed after bus assignment. The administrator will update your bus or route.'))}</span>`;
-    else routeHtml = `<b>${esc(t('Approved'))}</b><br>${esc(t('Your stop: {n} of {total}', { n: r.my_stop, total: r.stops_total }))}${r.eta ? `<br>${esc(t('Estimated pickup {time}', { time: r.eta }))}` : ''}
-      <br><a class="sj-btn sj-btn-sm sj-btn-primary" style="margin-top:8px" href="#mybus">🗺 ${esc(t('View my bus route'))}</a>`;
-  }
+  const routeHtml = (r, pm) => {
+    if (!r || r.state === 'preparing') return `<b>${esc(t('Being prepared'))}</b>`;
+    if (r.state === 'being_added') return `<b>${esc(t('Being added to the route'))}</b><br><span class="sj-muted">${esc(t('Your family has been placed on this bus. Your stop will be added when the route is next updated.'))}</span>`;
+    if (r.state === 'needs_review') return `<b>${esc(t('Needs review'))}</b><br><span class="sj-muted">${esc(t('Your pickup point changed after bus assignment. The administrator will update your bus or route.'))}</span>`;
+    return `<b>${esc(t('Approved'))}</b><br>${esc(t('Your stop: {n} of {total}', { n: r.my_stop, total: r.stops_total }))}${r.eta ? `<br>${esc(t(pm ? 'Estimated drop-off {time}' : 'Estimated pickup {time}', { time: r.eta }))}` : ''}
+      <br><a class="sj-btn sj-btn-sm sj-btn-primary" style="margin-top:8px" href="${pm ? '#mybus-pm' : '#mybus'}">🗺 ${esc(t(pm ? 'View afternoon route' : 'View my bus route'))}</a>`;
+  };
   return `<section class="rg-status-card">
     <h3>${esc(t('My transportation status'))}</h3>
     ${me.sharing_prompt_pending ? `<div class="sj-note sj-note-warn" style="margin-top:0"><b>${esc(t('New: sharing with your bus group'))}</b>${esc(t("You can now choose whether families on your bus can see your pickup point, first name, children's first names or phone. Nothing is shared until you choose."))}
@@ -275,7 +273,8 @@ function statusCard(me) {
       <dt>${esc(t('Bus assignment'))}</dt><dd>${bus
         ? `<b><bdi>${esc(bus.number)}</bdi></b><br>${esc(t('{n} students assigned', { n: num(bus.students_assigned) }))} · ${esc(t('Capacity {n}', { n: num(bus.capacity) }))} · ${esc(t('{n} seats available', { n: num(bus.free_seats) }))}`
         : `<b>${esc(t('Not assigned yet'))}</b><br><span class="sj-muted">${esc(t('Bus assignments are still being prepared.'))}</span>`}</dd>
-      ${bus ? `<dt>${esc(t('Route'))}</dt><dd>${routeHtml}</dd>` : ''}
+      ${bus ? `<dt>${esc(t('Morning (pickup)'))}</dt><dd>${routeHtml(st.route, false)}</dd>
+        <dt>${esc(t('Afternoon (drop-off)'))}</dt><dd>${routeHtml(st.route_afternoon, true)}</dd>` : ''}
     </dl>
   </section>`;
 }
@@ -304,35 +303,41 @@ async function renderStatus() {
   window.scrollTo(0, 0);
 }
 
-async function renderMyBus() {
+async function renderMyBus(dir = 'morning') {
   if (!familyToken()) return renderPinLogin('status');
   app.innerHTML = `<div class="sj-loading">${esc(t('Loading…'))}</div>`;
+  const pm = dir === 'afternoon';
   let r;
   try {
-    r = await familyCall('/my/route');
+    r = await familyCall(`/my/route?direction=${dir}`);
   } catch (err) {
     if (err.status === 401) return renderPinLogin('status');
     throw err;
   }
   signoutBtn.hidden = false;
-  const back = `<div style="padding:16px 0"><a href="#status" class="sj-linkbtn">${esc(t('← Back'))}</a></div>`;
+  const back = `<div style="padding:16px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><a href="#status" class="sj-linkbtn">${esc(t('← Back'))}</a>
+    <span class="sj-spacer"></span>
+    <a class="sj-btn sj-btn-sm ${pm ? '' : 'sj-btn-primary'}" href="#mybus">🌅 ${esc(t('Morning'))}</a>
+    <a class="sj-btn sj-btn-sm ${pm ? 'sj-btn-primary' : ''}" href="#mybus-pm">🏠 ${esc(t('Afternoon'))}</a></div>`;
   if (r.state !== 'approved') {
-    app.innerHTML = `${back}<div class="sj-card sj-formcard"><h2>${esc(t('My bus route'))}</h2>
+    app.innerHTML = `${back}<div class="sj-card sj-formcard"><h2>${esc(t(pm ? 'Afternoon route' : 'My bus route'))}</h2>
       <p>${esc(r.state === 'not_assigned' ? t('Bus assignments are still being prepared.') : r.state === 'being_added'
         ? t('Your family has been placed on this bus. Your stop will be added when the route is next updated.') : r.state === 'needs_review'
         ? t('Your pickup point changed after bus assignment. The administrator will update your bus or route.') : t('Your bus route is being prepared.'))}</p></div>`;
     return;
   }
   const kids = (n) => esc(n === 1 ? t('1 student') : t('{n} students', { n }));
-  const stopLine = (s) => `<li class="${s.you ? 'rg-you' : ''}"><b>${esc(t('Stop {n}', { n: s.n }))}</b>${s.you ? ` — <b>${esc(t('YOU'))}</b>` : ''}${s.parent ? ` · <bdi>${esc(s.parent)}</bdi>` : ''}${s.children ? ` · ${s.children.map((c) => `<bdi>${esc(c)}</bdi>`).join(', ')}` : ''} · ${kids(s.students)}${s.you && s.eta ? ` · ${esc(t('Estimated pickup {time}', { time: s.eta }))}` : ''}</li>`;
+  const stopLine = (s) => `<li class="${s.you ? 'rg-you' : ''}"><b>${esc(t('Stop {n}', { n: s.n }))}</b>${s.you ? ` — <b>${esc(t('YOU'))}</b>` : ''}${s.parent ? ` · <bdi>${esc(s.parent)}</bdi>` : ''}${s.children ? ` · ${s.children.map((c) => `<bdi>${esc(c)}</bdi>`).join(', ')}` : ''} · ${kids(s.students)}${s.you && s.eta ? ` · ${esc(t(pm ? 'Estimated drop-off {time}' : 'Estimated pickup {time}', { time: s.eta }))}` : ''}</li>`;
   app.innerHTML = `${back}
     <div class="sj-card sj-formcard">
-      <h2><bdi>${esc(r.bus.number)}</bdi> — ${esc(t('Morning route'))}</h2>
-      <p class="sj-muted" style="margin-top:0">${esc(t('{n} students', { n: num(r.students_on_route) }))} · ${esc(t('{n} stops', { n: r.stops_total }))} · ${esc(t('Your stop: {n} of {total}', { n: r.my_stop, total: r.stops_total }))}${r.eta ? ` · ${esc(t('Estimated pickup {time}', { time: r.eta }))}` : ''}</p>
+      <h2><bdi>${esc(r.bus.number)}</bdi> — ${esc(t(pm ? 'Afternoon route' : 'Morning route'))}</h2>
+      <p class="sj-muted" style="margin-top:0">${esc(t('{n} students', { n: num(r.students_on_route) }))} · ${esc(t('{n} stops', { n: r.stops_total }))} · ${esc(t('Your stop: {n} of {total}', { n: r.my_stop, total: r.stops_total }))}${r.eta ? ` · ${esc(t(pm ? 'Estimated drop-off {time}' : 'Estimated pickup {time}', { time: r.eta }))}` : ''}</p>
       <div class="rg-preview" style="height:60vh;min-height:320px" data-route></div>
       <p class="sj-help">${esc(t('Only families assigned to this bus can see this route. Grey stops are approximate because those families keep their exact pickup point private.'))}</p>
       <h3>${esc(t('Stops'))}</h3>
-      <ol class="rg-stoplist">${r.stops.map(stopLine).join('')}<li><b>🏫 <bdi>${esc(r.school.name)}</bdi></b>${r.arrival_time ? ` · ${esc(r.arrival_time)}` : ''}</li></ol>
+      <ol class="rg-stoplist">${pm
+        ? `<li><b>🏫 <bdi>${esc(r.school.name)}</bdi></b>${r.departure_time ? ` · ${esc(t('leaves {time}', { time: r.departure_time }))}` : ''}</li>${r.stops.map(stopLine).join('')}`
+        : `${r.stops.map(stopLine).join('')}<li><b>🏫 <bdi>${esc(r.school.name)}</bdi></b>${r.arrival_time ? ` · ${esc(r.arrival_time)}` : ''}</li>`}</ol>
       ${r.roster.length ? `<h3>${esc(t('Families on your bus who chose to share'))}</h3>
         <ul class="rg-roster">${r.roster.map((f) => `<li>${f.parent ? `<b><bdi>${esc(f.parent)}</bdi></b>` : ''}${f.children ? ` ${f.children.map((c) => `<bdi>${esc(c)}</bdi>`).join(', ')}` : ''}${f.phone ? ` · <a href="tel:${esc(f.phone)}" dir="ltr">${esc(f.phone)}</a>` : ''}${f.stop ? ` · ${esc(t('Stop {n}', { n: f.stop }))}` : ''}</li>`).join('')}</ul>` : ''}
     </div>`;
@@ -425,7 +430,8 @@ async function route() {
   try {
     // A family's own pages work with their PIN session alone (no shared password needed).
     if (location.hash === '#status' && familyToken()) return await renderStatus();
-    if (location.hash === '#mybus' && familyToken()) return await renderMyBus();
+    if (location.hash === '#mybus' && familyToken()) return await renderMyBus('morning');
+    if (location.hash === '#mybus-pm' && familyToken()) return await renderMyBus('afternoon');
     if (!viewerToken()) return renderGate();
     if (location.hash === '#register') return await renderRegister();
     if (location.hash === '#edit') return editorToken() ? await renderEditForm() : renderPinLogin('edit');

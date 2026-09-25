@@ -1,17 +1,17 @@
 // SJAS Bus Registration — admin: fleet, bus assignment, routes, settings, driver sheets.
 
-import { appleMapsUrl, distanceM, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=18';
-import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=18';
-import { hull, PALETTE } from './reg-cluster.js?v=18';
-import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=18';
-import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=18';
-import { t } from './reg-i18n.js?v=18';
+import { appleMapsUrl, distanceM, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=19';
+import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=19';
+import { hull, PALETTE } from './reg-cluster.js?v=19';
+import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=19';
+import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=19';
+import { t } from './reg-i18n.js?v=19';
 
 let ctx = null;          // { call, getRows, openDetail, refreshAll }
 let fleet = null;        // /admin/fleet payload
 let preview = null;      // pending auto-assignment preview
 let map = null;
-const ui = { bus: 'all', routeBus: null };
+const ui = { bus: 'all', routeBus: null, dir: 'morning' };
 let editing = null;      // route editor state
 
 export function initFleet(context) { ctx = context; }
@@ -78,8 +78,13 @@ export async function renderBuses(panel) {
     const used = s ? s.students : b.students, famCount = s ? s.families : b.families;
     const free = b.capacity - used;
     const seatsLine = tt('{used} / {cap} students', { used: num(used), cap: num(b.capacity) });
-    const route = fleet.routes.filter((r) => r.bus_id === b.id);
-    const appr = route.find((r) => r.status === 'approved'), draft = route.find((r) => r.status === 'draft');
+    const routeBadge = (dir) => {
+      const rs = fleet.routes.filter((r) => r.bus_id === b.id && (r.direction || 'morning') === dir);
+      const appr = rs.find((r) => r.status === 'approved'), draft = rs.find((r) => r.status === 'draft');
+      const label = t(dir === 'afternoon' ? 'Afternoon' : 'Morning');
+      return appr ? `<span class="sj-badge ${appr.stale ? 'sj-badge-warn' : 'sj-badge-ok'}">${esc(label)}: ${tt(appr.stale ? 'Route v{v} needs review' : 'Route v{v} approved', { v: appr.version })}</span>`
+        : draft ? `<span class="sj-badge sj-badge-warn">${esc(label)}: ${tt('Draft route v{v}', { v: draft.version })}</span>` : `<span class="sj-badge">${esc(label)}: ${tt('No route')}</span>`;
+    };
     if (b.virtual) {
       return `<div class="rg-cluster" style="--c:${busColor(b.id)};cursor:default;border-style:dashed">
       <b>${esc(b.bus_number)} <span class="sj-badge sj-badge-warn">${tt('suggested — not created yet')}</span></b>
@@ -93,7 +98,7 @@ export async function renderBuses(panel) {
       <b>${esc(b.bus_number)}${b.active ? '' : ` <span class="sj-badge">${tt('inactive')}</span>`}${b.assignments_locked ? ' 🔒' : ''}</b>
       ${seatsLine} · <b style="display:inline;color:${free < 0 ? 'var(--danger)' : 'inherit'}">${tt('{n} free', { n: num(free) })}</b><br>
       <span class="sj-small sj-muted">${tt('{n} families', { n: num(famCount) })}${s?.spread_p90_m != null ? ` · ${tt('spread {d} (90%)', { d: km(s.spread_p90_m) })}` : ''}${targetSeats(b, pct) < b.capacity ? ` · ${tt('target {n}', { n: targetSeats(b, pct) })}` : ''}</span><br>
-      <span class="sj-small">${appr ? `<span class="sj-badge ${appr.stale ? 'sj-badge-warn' : 'sj-badge-ok'}">${tt(appr.stale ? 'Route v{v} needs review' : 'Route v{v} approved', { v: appr.version })}</span>` : draft ? `<span class="sj-badge sj-badge-warn">${tt('Draft route v{v}', { v: draft.version })}</span>` : `<span class="sj-badge">${tt('No route')}</span>`}</span>
+      <span class="sj-small">${routeBadge('morning')} ${routeBadge('afternoon')}</span>
       <div class="sj-inline" style="margin-top:6px;flex-wrap:wrap">
         <button type="button" class="sj-btn sj-btn-sm sj-btn-primary" data-fams-bus="${esc(b.id)}">${tt('Families')}</button>
         <button type="button" class="sj-btn sj-btn-sm" data-edit-bus="${esc(b.id)}">${tt('Edit')}</button>
@@ -482,10 +487,12 @@ export async function renderRoutes(panel) {
   if (!buses.length) { panel.innerHTML = `<div class="sj-empty">${tt('Assign families to buses first (Buses tab).')}</div>`; return; }
   if (!ui.routeBus || !buses.some((b) => b.id === ui.routeBus)) ui.routeBus = buses[0].id;
   const bus = busById(ui.routeBus);
-  const saved = await ctx.call(`/admin/routes/${bus.id}`);
-  const summary = fleet.routes.filter((r) => r.bus_id === bus.id);
+  const dir = ui.dir;
+  const pm = dir === 'afternoon';
+  const saved = await ctx.call(`/admin/routes/${bus.id}?direction=${dir}`);
+  const summary = fleet.routes.filter((r) => r.bus_id === bus.id && (r.direction || 'morning') === dir);
   const stale = { draft: summary.find((r) => r.status === 'draft')?.stale, approved: summary.find((r) => r.status === 'approved')?.stale };
-  if (!editing || editing.busId !== bus.id) editing = fromSaved(bus, saved.draft || saved.approved, saved.draft ? 'draft' : saved.approved ? 'approved' : null);
+  if (!editing || editing.busId !== bus.id || editing.dir !== dir) editing = fromSaved(bus, saved.draft || saved.approved, saved.draft ? 'draft' : saved.approved ? 'approved' : null, dir);
 
   const fams = new Map(families().map((f) => [f.code, f]));
   const onBus = fleet.assignments.filter((a) => a.bus_id === bus.id).map((a) => fams.get(a.registration_code)).filter((f) => f && f.has_pin);
@@ -493,7 +500,12 @@ export async function renderRoutes(panel) {
   const extra = editing.stops.filter((s) => !fams.get(s.code) || !onBus.some((f) => f.code === s.code));
 
   const arrival = String(fleet.settings.school_arrival_time).slice(0, 5);
+  const departure = String(fleet.settings.school_departure_time || '14:10').slice(0, 5);
   panel.innerHTML = `
+    <div class="sj-inline" style="margin-bottom:10px;flex-wrap:wrap" role="group" aria-label="${tt('Trip')}">
+      <button type="button" class="sj-btn sj-btn-sm ${pm ? '' : 'sj-btn-primary'}" data-dir="morning" aria-pressed="${!pm}">🌅 ${tt('Morning (home → school)')}</button>
+      <button type="button" class="sj-btn sj-btn-sm ${pm ? 'sj-btn-primary' : ''}" data-dir="afternoon" aria-pressed="${pm}">🏠 ${tt('Afternoon (school → home)')}</button>
+    </div>
     <div class="rg-maptools">
       <label>${tt('Bus')} <select data-bus>${buses.map((b) => `<option value="${esc(b.id)}" ${b.id === bus.id ? 'selected' : ''}>${esc(b.bus_number)} (${tt('{n} families', { n: b.families })})</option>`).join('')}</select></label>
       <span class="sj-small">${saved.approved ? `<span class="sj-badge ${stale.approved ? 'sj-badge-warn' : 'sj-badge-ok'}">${tt('Approved v{v}', { v: saved.approved.version })}${stale.approved ? ` — ${tt('needs review')}` : ''}</span>` : `<span class="sj-badge">${tt('No approved route')}</span>`}
@@ -517,6 +529,11 @@ export async function renderRoutes(panel) {
     ${(() => {
       const trip = tripTimes();
       if (!trip) return '';
+      if (pm) {
+        return `<div class="sj-note sj-note-info rg-trip" style="margin-top:0"><b>${tt('Trip:')}</b>
+          ${tt('leaves school at')} <b>${esc(departure)}</b> (${tt('{d}, ~{t} to the first stop', { d: km(trip.toFirstM), t: mins(trip.toFirstS) })}) · ${tt('first drop-off')} <b>${trip.firstPickup || '—'}</b> ·
+          ${tt('last drop-off')} <b>${trip.lastStop || '—'}</b>${editing.start && trip.end ? ` · ${tt('driver back at the end point ~{time}', { time: trip.end })}` : ''}</div>`;
+      }
       return `<div class="sj-note sj-note-info rg-trip" style="margin-top:0"><b>${tt('Trip:')}</b>
         ${editing.start ? `${tt('driver leaves the start point at')} <b>${trip.depart}</b> (${tt('{d}, ~{t} to the first stop', { d: km(trip.toFirstM), t: mins(trip.toFirstS) })}) · ` : ''}${tt('first pickup')} <b>${trip.firstPickup || '—'}</b> ·
         ${tt('arrives at school')} <b>${esc(arrival)}</b>${editing.est_total_s ? ` · ${tt('total ~{t}', { t: mins(editing.est_total_s) })}` : ''}</div>`;
@@ -526,7 +543,7 @@ export async function renderRoutes(panel) {
     ${editing.provider === 'straight' ? `<div class="sj-note sj-note-warn">${tt('Road routing was unavailable — distances are straight-line estimates. Try "Update road line" again later.')}</div>` : ''}
     <p class="sj-help" style="margin-top:0">${tt('{s} stops · {n} students · capacity {c}', { s: num(editing.stops.length), n: num(editing.stops.reduce((n, st) => n + (fams.get(st.code)?.students || 0), 0)), c: bus.capacity })}
       ${editing.distance_m ? ` · ${km(editing.distance_m)}` : ''}${editing.est_total_s ? ` · ${tt('about {t} incl. traffic ×{f} and {d}s per stop', { t: mins(editing.est_total_s), f: fleet.settings.traffic_factor, d: fleet.settings.dwell_seconds })}` : ''}
-      · ${tt('ends at {school} (arrival {time})', { school: fleet.settings.school_name, time: arrival })}</p>
+      · ${pm ? tt('starts at {school} (leaves {time})', { school: fleet.settings.school_name, time: departure }) : tt('ends at {school} (arrival {time})', { school: fleet.settings.school_name, time: arrival })}</p>
     <div style="display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:12px" class="rg-routegrid">
       <div class="rg-adminmap" style="height:62vh"></div>
       <div data-list style="max-height:62vh;overflow:auto"></div>
@@ -540,6 +557,13 @@ export async function renderRoutes(panel) {
   renderStopList(panel.querySelector('[data-list]'), fams, panel);
 
   panel.querySelector('[data-bus]').addEventListener('change', (e) => { ui.routeBus = e.target.value; editing = null; renderRoutes(panel); });
+  panel.querySelectorAll('[data-dir]').forEach((b) => b.addEventListener('click', () => {
+    if (b.dataset.dir === ui.dir) return;
+    if (editing?.dirty && !confirm(t('You have unsaved changes on this route. Switch anyway?'))) return;
+    ui.dir = b.dataset.dir;
+    editing = null;
+    renderRoutes(panel);
+  }));
   panel.onclick = async (e) => {
     const b = e.target.closest('button');
     if (!b || b.closest('[data-list]')) return;
@@ -561,7 +585,7 @@ export async function renderRoutes(panel) {
         b.disabled = true;
         await ctx.call(`/admin/routes/${bus.id}`, { method: 'POST', body: {
           stops: editing.stops.map((s) => ({ registration_code: s.code, locked: s.locked, leg_distance_m: s.leg_distance_m, leg_duration_s: s.leg_duration_s, eta_offset_s: s.eta_offset_s })),
-          geometry: editing.geometry, start_lat: editing.start?.[0] ?? null, start_lng: editing.start?.[1] ?? null,
+          direction: dir, geometry: editing.geometry, start_lat: editing.start?.[0] ?? null, start_lng: editing.start?.[1] ?? null,
           total_distance_m: editing.distance_m, total_duration_s: editing.duration_s, est_total_s: editing.est_total_s, provider: editing.provider,
         } });
         editing.dirty = false;
@@ -569,8 +593,10 @@ export async function renderRoutes(panel) {
         return renderRoutes(panel);
       }
       if (b.dataset.approve !== undefined) {
-        if (!confirm(t('Approve this route for {bus}? Parents on this bus will then see their stop number, estimated pickup time and the bus route map.', { bus: bus.bus_number }))) return;
-        await ctx.call(`/admin/routes/${bus.id}/approve`, { method: 'POST', body: {} });
+        if (!confirm(pm
+          ? t('Approve the afternoon route for {bus}? Parents on this bus will then see their drop-off stop and estimated drop-off time.', { bus: bus.bus_number })
+          : t('Approve this route for {bus}? Parents on this bus will then see their stop number, estimated pickup time and the bus route map.', { bus: bus.bus_number }))) return;
+        await ctx.call(`/admin/routes/${bus.id}/approve`, { method: 'POST', body: { direction: dir } });
         editing = null;
         toast(t('Route approved'));
         return renderRoutes(panel);
@@ -601,10 +627,10 @@ export async function renderRoutes(panel) {
   };
 }
 
-function fromSaved(bus, route, status) {
-  if (!route) return { busId: bus.id, stops: [], geometry: [], dirty: false, status: null };
+function fromSaved(bus, route, status, dir = 'morning') {
+  if (!route) return { busId: bus.id, dir, stops: [], geometry: [], dirty: false, status: null };
   return {
-    busId: bus.id, status, dirty: false,
+    busId: bus.id, dir, status, dirty: false,
     stops: route.stops.filter((s) => s.registration_code).map((s) => ({ code: s.registration_code, locked: s.locked, leg_distance_m: s.leg_distance_m, leg_duration_s: s.leg_duration_s, eta_offset_s: s.eta_offset_s })),
     geometry: route.geometry || [], distance_m: route.total_distance_m, duration_s: route.total_duration_s, est_total_s: route.est_total_s, provider: route.provider,
     start: route.start_lat != null ? [Number(route.start_lat), Number(route.start_lng)] : null,
@@ -621,9 +647,19 @@ async function optimise(bus, onBus, keepLocks) {
   const points = [...stops.map((f) => [f.lat, f.lng]), school, ...(hasDepot ? [[bus.start_lat, bus.start_lng]] : [])];
   if (points.length > 90) throw new Error(t('Too many stops for one route (max 88).'));
   const m = await ctx.call('/admin/routing/matrix', { method: 'POST', body: { points } });
+  const n = stops.length;
   const locked = new Map();
-  if (keepLocks) current.forEach((s, pos) => { if (s.locked) locked.set(pos, codes.indexOf(s.code)); });
-  const order = orderStops(m.durations, stops.length, { hasDepot, locked });
+  let order;
+  if (editing.dir === 'afternoon') {
+    // Afternoon: school -> stops (-> end point). Solved as the morning problem on the
+    // transposed road times (one-way streets respected), then read backwards.
+    const T = m.durations.map((row, i) => row.map((_, j) => m.durations[j][i]));
+    if (keepLocks) current.forEach((s, pos) => { if (s.locked) locked.set(n - 1 - pos, codes.indexOf(s.code)); });
+    order = orderStops(T, n, { hasDepot, locked }).reverse();
+  } else {
+    if (keepLocks) current.forEach((s, pos) => { if (s.locked) locked.set(pos, codes.indexOf(s.code)); });
+    order = orderStops(m.durations, n, { hasDepot, locked });
+  }
   const lockedCodes = new Set(current.filter((s) => s.locked).map((s) => s.code));
   editing.stops = order.map((i) => ({ code: stops[i].code, locked: lockedCodes.has(stops[i].code) }));
   editing.provider = m.provider;
@@ -633,10 +669,22 @@ async function optimise(bus, onBus, keepLocks) {
 async function refreshLine(bus, fams) {
   const school = [Number(fleet.settings.school_lat), Number(fleet.settings.school_lng)];
   const hasDepot = bus.start_lat != null;
-  const points = [...(hasDepot ? [[bus.start_lat, bus.start_lng]] : []), ...editing.stops.map((s) => [fams.get(s.code).lat, fams.get(s.code).lng]), school];
+  const depot = hasDepot ? [[bus.start_lat, bus.start_lng]] : [];
+  const stopPts = editing.stops.map((s) => [fams.get(s.code).lat, fams.get(s.code).lng]);
+  const pm = editing.dir === 'afternoon';
+  const points = pm ? [school, ...stopPts, ...depot] : [...depot, ...stopPts, school];
   const p = await ctx.call('/admin/routing/path', { method: 'POST', body: { points } });
-  const offsets = etaOffsets(p.legs, editing.stops.length, { hasDepot, trafficFactor: Number(fleet.settings.traffic_factor), dwellSeconds: fleet.settings.dwell_seconds });
-  const stopLegs = hasDepot ? p.legs.slice(1) : p.legs;
+  const factor = Number(fleet.settings.traffic_factor), dwell = fleet.settings.dwell_seconds;
+  let offsets, stopLegs;
+  if (pm) {
+    // Seconds after leaving school until the bus reaches each stop (dwell at earlier stops).
+    let acc = 0;
+    offsets = editing.stops.map((_, i) => { acc += (p.legs[i]?.duration_s || 0) * factor + (i ? dwell : 0); return Math.round(acc); });
+    stopLegs = p.legs.slice(1); // leg i = stop i -> next stop (or end point)
+  } else {
+    offsets = etaOffsets(p.legs, editing.stops.length, { hasDepot, trafficFactor: factor, dwellSeconds: dwell });
+    stopLegs = hasDepot ? p.legs.slice(1) : p.legs;
+  }
   editing.stops = editing.stops.map((s, i) => ({ ...s, leg_distance_m: stopLegs[i]?.distance_m ?? null, leg_duration_s: stopLegs[i]?.duration_s ?? null, eta_offset_s: offsets[i] }));
   editing.geometry = p.geometry;
   editing.start = hasDepot ? [bus.start_lat, bus.start_lng] : null;
@@ -652,6 +700,16 @@ function tripTimes() {
   if (!editing?.stops.length || editing.est_total_s == null) return null;
   const first = editing.stops[0].eta_offset_s;
   const stopKm = editing.stops.reduce((n, s) => n + (s.leg_distance_m || 0), 0);
+  if (editing.dir === 'afternoon') {
+    const last = editing.stops[editing.stops.length - 1].eta_offset_s;
+    return {
+      firstPickup: first != null ? etaLabel(first) : null,
+      lastStop: last != null ? etaLabel(last) : null,
+      end: editing.start ? etaLabel(editing.est_total_s) : null,
+      toFirstM: editing.distance_m ? Math.max(0, editing.distance_m - stopKm) : 0,
+      toFirstS: first || 0,
+    };
+  }
   return {
     firstPickup: first != null ? etaLabel(first) : null,
     depart: editing.start ? etaLabel(editing.est_total_s) : (first != null ? etaLabel(first) : null),
@@ -660,10 +718,11 @@ function tripTimes() {
   };
 }
 
-function etaLabel(offset) {
+function etaLabel(offset, dir = editing?.dir) {
   if (offset == null) return '';
-  const [h, m] = String(fleet.settings.school_arrival_time).split(':').map(Number);
-  const x = h * 60 + m - Math.round(offset / 60);
+  const pm = dir === 'afternoon';
+  const [h, m] = String(pm ? fleet.settings.school_departure_time || '14:10' : fleet.settings.school_arrival_time).split(':').map(Number);
+  const x = h * 60 + m + (pm ? 1 : -1) * Math.round(offset / 60);
   return `${String(Math.floor(((x % 1440) + 1440) % 1440 / 60)).padStart(2, '0')}:${String(((x % 60) + 60) % 60).padStart(2, '0')}`;
 }
 
@@ -676,6 +735,13 @@ function drawRoute(L, fams, bus) {
   if (start) {
     const trip = tripTimes();
     const leave = editing.start && trip?.depart ? trip.depart : null;
+    if (editing.dir === 'afternoon') {
+      L.marker(start, { zIndexOffset: 500, icon: L.divIcon({ className: '', html: '<div class="rg-dot" style="background:#15803d;width:30px;height:30px;border:3px solid #fff">🏁</div>', iconSize: [30, 30], iconAnchor: [15, 15] }) })
+        .bindTooltip(`${tt('End')}${trip?.end ? ` · ~${trip.end}` : ''}`, { permanent: true, direction: 'top', offset: [0, -14] })
+        .bindPopup(`<div class="rg-popup"><b>${tt('Driver end point')}</b><br>${trip?.end ? `${tt('back ~{time}', { time: trip.end })}<br>` : ''}<a href="${esc(googleMapsUrl(start[0], start[1]))}" target="_blank" rel="noopener noreferrer">Google Maps</a></div>`)
+        .addTo(map);
+      pts.push(start);
+    } else
     L.marker(start, { zIndexOffset: 500, icon: L.divIcon({ className: '', html: '<div class="rg-dot" style="background:#15803d;width:30px;height:30px;border:3px solid #fff">0</div>', iconSize: [30, 30], iconAnchor: [15, 15] }) })
       .bindTooltip(`${tt('Start')}${leave ? ` · ${tt('leave {time}', { time: leave })}` : ''}`, { permanent: true, direction: 'top', offset: [0, -14] })
       .bindPopup(`<div class="rg-popup"><b>0 · ${tt('Driver start point')}</b><br>${leave ? `${tt('Leave at')} <b>${leave}</b><br>${tt('{d} · ~{t} to stop 1', { d: km(trip.toFirstM), t: mins(trip.toFirstS) })}<br>` : `${tt('Generate or re-optimise the route to get the departure time.')}<br>`}
@@ -689,7 +755,7 @@ function drawRoute(L, fams, bus) {
     if (!f) return;
     pts.push([f.lat, f.lng]);
     L.marker([f.lat, f.lng], { icon: L.divIcon({ className: '', html: `<div class="rg-dot" style="background:${busColor(bus.id)};width:26px;height:26px;${s.locked ? 'outline:3px solid #101828;' : ''}">${i + 1}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] }) })
-      .bindPopup(`<div class="rg-popup"><b>${tt('Stop {n}', { n: i + 1 })} · ${esc(f.code)} · ${esc(f.parent)}</b><br>${esc(students(f.students))}${s.eta_offset_s != null ? ` · ${tt('pickup ~{time}', { time: etaLabel(s.eta_offset_s) })}` : ''}<br>
+      .bindPopup(`<div class="rg-popup"><b>${tt('Stop {n}', { n: i + 1 })} · ${esc(f.code)} · ${esc(f.parent)}</b><br>${esc(students(f.students))}${s.eta_offset_s != null ? ` · ${tt(editing.dir === 'afternoon' ? 'drop-off ~{time}' : 'pickup ~{time}', { time: etaLabel(s.eta_offset_s) })}` : ''}<br>
         <a href="${esc(googleMapsUrl(f.lat, f.lng))}" target="_blank" rel="noopener noreferrer">Google Maps</a> · <a href="${esc(appleMapsUrl(f.lat, f.lng))}" target="_blank" rel="noopener noreferrer">Apple Maps</a></div>`)
       .addTo(map);
   });
@@ -699,9 +765,14 @@ function drawRoute(L, fams, bus) {
 
 function renderStopList(el, fams, panel) {
   const trip = tripTimes();
-  const startRow = editing.start && trip ? `<div class="sj-card" style="padding:8px 10px;margin-bottom:6px;display:flex;gap:8px;align-items:center;border-color:#15803d">
+  const pmRow = (label, sub) => `<div class="sj-card" style="padding:8px 10px;margin-bottom:6px;display:flex;gap:8px;align-items:center;border-color:#15803d">
+    <b style="min-width:26px;color:#15803d">${label === 'end' ? '🏁' : '0'}</b><div style="flex:1;min-width:0">${sub}</div></div>`;
+  const startRow = editing.dir === 'afternoon'
+    ? (trip ? pmRow('school', `<b>${tt('School')}</b><br><span class="sj-small sj-muted">${tt('leave {time}', { time: String(fleet.settings.school_departure_time || '14:10').slice(0, 5) })} · ${tt('next {d}', { d: km(trip.toFirstM) })} (~${mins(trip.toFirstS)})</span>`) : '')
+    : editing.start && trip ? `<div class="sj-card" style="padding:8px 10px;margin-bottom:6px;display:flex;gap:8px;align-items:center;border-color:#15803d">
     <b style="min-width:26px;color:#15803d">0</b>
     <div style="flex:1;min-width:0"><b>${tt('Driver start point')}</b><br><span class="sj-small sj-muted">${tt('leave ~{time}', { time: trip.depart })} · ${tt('next {d}', { d: km(trip.toFirstM) })} (~${mins(trip.toFirstS)})</span></div></div>` : '';
+  const endRow = editing.dir === 'afternoon' && editing.start && trip?.end ? pmRow('end', `<b>${tt('Driver end point')}</b><br><span class="sj-small sj-muted">${tt('back ~{time}', { time: trip.end })}</span>`) : '';
   el.innerHTML = editing.stops.length ? `${startRow}<ol style="list-style:none;margin:0;padding:0">${editing.stops.map((s, i) => {
     const f = fams.get(s.code);
     return `<li draggable="true" data-i="${i}" class="sj-card" style="padding:8px 10px;margin-bottom:6px;display:flex;gap:8px;align-items:center;${s.locked ? 'border-color:#101828' : ''}">
@@ -711,7 +782,7 @@ function renderStopList(el, fams, panel) {
       <button type="button" class="sj-iconbtn" style="width:34px;height:34px;font-size:1rem" data-down="${i}" aria-label="${tt('Later')}">▼</button>
       <button type="button" class="sj-iconbtn" style="width:34px;height:34px;font-size:1rem" data-lock="${i}" aria-label="${tt('Lock position')}">${s.locked ? '🔒' : '🔓'}</button>
       <button type="button" class="sj-iconbtn" style="width:34px;height:34px;font-size:1rem" data-rm="${i}" aria-label="${tt('Remove from bus')}">×</button></li>`;
-  }).join('')}</ol><p class="sj-help">${tt('Drag or use ▲▼ to reorder. 🔒 keeps a stop in place when re-optimising. × removes the family from this bus. After reordering, use “Update road line”, then “Save draft”.')}</p>`
+  }).join('')}</ol>${endRow}<p class="sj-help">${tt('Drag or use ▲▼ to reorder. 🔒 keeps a stop in place when re-optimising. × removes the family from this bus. After reordering, use “Update road line”, then “Save draft”.')}</p>`
     : `<div class="sj-empty">${tt('No route yet. Click “Generate suggested route”.')}</div>`;
   const move = (from, to) => {
     if (to < 0 || to >= editing.stops.length) return;
@@ -754,23 +825,29 @@ async function driverSheet(bus, fams) {
       r.building || '', r.street || '', r.landmark || '', r.pickup_notes || '', f ? googleMapsUrl(f.lat, f.lng) : ''];
   });
   const trip = tripTimes();
-  if (editing.start && trip) rows.unshift([0, trip.depart, t('Driver start point — leave'), '', '', '', '', '', '', '', '', t('{d} to stop 1', { d: km(trip.toFirstM) }), googleMapsUrl(editing.start[0], editing.start[1])]);
+  const pm = editing.dir === 'afternoon';
+  const departure = String(fleet.settings.school_departure_time || '14:10').slice(0, 5);
+  if (pm) rows.unshift([0, departure, t('School — leave'), '', '', '', '', '', '', '', '', '', '']);
+  if (!pm && editing.start && trip) rows.unshift([0, trip.depart, t('Driver start point — leave'), '', '', '', '', '', '', '', '', t('{d} to stop 1', { d: km(trip.toFirstM) }), googleMapsUrl(editing.start[0], editing.start[1])]);
   const school = [Number(fleet.settings.school_lat), Number(fleet.settings.school_lng)];
-  const pts = [...(editing.start ? [editing.start] : []), ...editing.stops.map((s) => [fams.get(s.code).lat, fams.get(s.code).lng]), school];
+  const stopPts = editing.stops.map((s) => [fams.get(s.code).lat, fams.get(s.code).lng]);
+  const pts = pm ? [school, ...stopPts, ...(editing.start ? [editing.start] : [])] : [...(editing.start ? [editing.start] : []), ...stopPts, school];
   const links = googleDirectionsLinks(pts);
   const arrival = String(fleet.settings.school_arrival_time).slice(0, 5);
-  await downloadExcel(`Driver-sheet-${bus.bus_number.replace(/\W+/g, '-')}-${today()}.xlsx`, [
+  await downloadExcel(`Driver-sheet-${bus.bus_number.replace(/\W+/g, '-')}-${pm ? 'afternoon' : 'morning'}-${today()}.xlsx`, [
     {
-      name: bus.bus_number,
-      header: ['Stop', 'Pickup ~', 'Registration', 'Parent', 'Phone', 'Students', 'Count', 'Area', 'Building/Villa', 'Street', 'Landmark', 'Notes', 'Map'].map((h) => t(h)),
+      name: `${bus.bus_number} ${t(pm ? 'Afternoon' : 'Morning')}`.slice(0, 31),
+      header: ['Stop', pm ? 'Drop-off ~' : 'Pickup ~', 'Registration', 'Parent', 'Phone', 'Students', 'Count', 'Area', 'Building/Villa', 'Street', 'Landmark', 'Notes', 'Map'].map((h) => t(h)),
       rows: [
         ...rows,
         [],
-        [t('School'), arrival, fleet.settings.school_name],
+        ...(pm ? [] : [[t('School'), arrival, fleet.settings.school_name]]),
         [],
         [t('Bus'), bus.bus_number, t('Capacity {n}', { n: bus.capacity }), `${t('Driver:')} ${bus.driver_name || '—'} ${bus.driver_phone || ''}`, `${t('Supervisor:')} ${bus.supervisor_name || '—'} ${bus.supervisor_phone || ''}`],
         [t('Route'), t(editing.status || 'unsaved'), editing.distance_m ? km(editing.distance_m) : '', editing.est_total_s ? t('about {t}', { t: mins(editing.est_total_s) }) : '',
-          trip ? `${editing.start ? `${t('Leave start {time}', { time: trip.depart })} · ` : ''}${t('First pickup {time}', { time: trip.firstPickup || '—' })} · ${t('School {time}', { time: arrival })}` : ''],
+          trip ? (pm
+            ? `${t('Leave school {time}', { time: departure })} · ${t('First drop-off {time}', { time: trip.firstPickup || '—' })} · ${t('Last drop-off {time}', { time: trip.lastStop || '—' })}`
+            : `${editing.start ? `${t('Leave start {time}', { time: trip.depart })} · ` : ''}${t('First pickup {time}', { time: trip.firstPickup || '—' })} · ${t('School {time}', { time: arrival })}`) : ''],
         ...links.map((l, i) => [t('Directions {i}/{n}', { i: i + 1, n: links.length }), l]),
       ],
       widths: [6, 8, 11, 22, 15, 34, 6, 14, 18, 16, 20, 24, 36],
@@ -795,6 +872,9 @@ export async function renderSettings(panel) {
       <div class="rg-preview" style="height:200px"></div></div>
     <div class="sj-row">
       <div class="sj-field"><label>${tt('School arrival time')}</label><input name="school_arrival_time" type="time" value="${esc(String(s.school_arrival_time).slice(0, 5))}"></div>
+      <div class="sj-field"><label>${tt('Afternoon departure from school')}</label><input name="school_departure_time" type="time" value="${esc(String(s.school_departure_time || '14:10').slice(0, 5))}"></div>
+    </div>
+    <div class="sj-row">
       <div class="sj-field"><label>${tt('Default seats per bus')}</label><input name="default_bus_capacity" type="number" min="1" max="100" value="${s.default_bus_capacity ?? 26}"></div>
     </div>
     <div class="sj-row">
