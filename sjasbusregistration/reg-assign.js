@@ -8,9 +8,9 @@
 // filled to their TARGET seats (capacity − spare seats) and NEVER beyond capacity.
 // Locked families and locked buses are never touched. Nothing is saved here.
 
-import { distanceM } from './reg-common.js?v=21';
-import { dbscan, clusterName } from './reg-cluster.js?v=21';
-import { orderStops } from './reg-route.js?v=21';
+import { distanceM } from './reg-common.js?v=22';
+import { dbscan, clusterName } from './reg-cluster.js?v=22';
+import { orderStops } from './reg-route.js?v=22';
 
 export const targetSeats = (bus, pct) => Math.max(0, bus.capacity - (bus.reserve_seats ?? Math.ceil((bus.capacity * (pct || 0)) / 100)));
 

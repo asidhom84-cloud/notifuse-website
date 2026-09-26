@@ -1,5 +1,5 @@
 // SJAS Bus Registration — Arabic strings for the "Vote for a bus leader" page.
-import { addStrings } from './reg-i18n.js?v=21';
+import { addStrings } from './reg-i18n.js?v=22';
 
 addStrings({
   'Vote for a bus leader': 'التصويت لمسؤول الباص',
@@ -15,6 +15,7 @@ addStrings({
   'All buses': 'كل الباصات',
   'Bus {bus}': 'باص {bus}',
   '{n} votes': '{n} صوت',
+  '1 vote': 'صوت واحد',
   'No votes yet.': 'لا توجد أصوات بعد.',
   'Enter the bus number.': 'اكتب رقم الباص.',
   'Write the name of the person you vote for.': 'اكتب اسم الشخص الذي تصوّت له.',

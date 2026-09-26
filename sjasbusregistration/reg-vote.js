@@ -2,9 +2,9 @@
 // One vote per phone per bus; voting again replaces it. The server unifies similar
 // names. Everyone sees every bus's names and vote counts — never voters or phones.
 
-import { api, esc, local, num, toast } from './reg-common.js?v=21';
-import { getLang, initLang, setLang, t } from './reg-i18n.js?v=21';
-import './reg-vote-i18n.js?v=21';
+import { api, esc, local, num, toast } from './reg-common.js?v=22';
+import { getLang, initLang, setLang, t } from './reg-i18n.js?v=22';
+import './reg-vote-i18n.js?v=22';
 
 const ME_KEY = 'busreg.voter'; // this device only: name + phone, to save retyping
 const app = document.getElementById('rg-app');
@@ -77,7 +77,7 @@ function render() {
       <h2>${tt('All buses')}</h2>
       ${info.buses.length ? info.buses.map((b) => `<div style="padding:10px 0;border-top:1px solid var(--line)">
         <button type="button" class="sj-linkbtn" data-bus="${esc(b.label)}"><b>${tt('Bus {bus}', { bus: b.label })}</b></button>
-        <span class="sj-small sj-muted"> · ${tt('{n} votes', { n: num(b.votes) })}</span>
+        <span class="sj-small sj-muted"> · ${tt(b.votes === 1 ? '1 vote' : '{n} votes', { n: num(b.votes) })}</span>
         <div style="margin-top:4px">${b.candidates.map((c, i) => `<span style="display:inline-block;margin:2px 10px 2px 0">${i === 0 && b.candidates.length > 1 && c.votes > b.candidates[1].votes ? '🏆 ' : ''}<bdi>${esc(c.name)}</bdi> <b class="sj-num">${num(c.votes)}</b></span>`).join('')}</div>
       </div>`).join('') : `<p class="sj-muted">${tt('No votes yet.')}</p>`}
     </section>`;
@@ -145,7 +145,7 @@ function paintSuggestions() {
   if (!rows.length || (!q && !here)) { el.innerHTML = ''; return; }
   el.innerHTML = `<div class="sj-card" style="padding:4px;margin-top:4px;max-height:220px;overflow:auto;box-shadow:var(--shadow)">
     ${rows.slice(0, 8).map(({ c, bus, same }) => `<button type="button" class="sj-linkbtn" data-sname="${esc(c.name)}" data-sid="${esc(c.id)}" style="display:flex;width:100%;justify-content:space-between;gap:8px;padding:8px 10px;text-decoration:none;color:inherit">
-      <bdi>${esc(c.name)}</bdi><span class="sj-small sj-muted">${same ? tt('{n} votes', { n: num(c.votes) }) : tt('Bus {bus}', { bus: bus.label })}</span></button>`).join('')}</div>`;
+      <bdi>${esc(c.name)}</bdi><span class="sj-small sj-muted">${same ? tt(c.votes === 1 ? '1 vote' : '{n} votes', { n: num(c.votes) }) : tt('Bus {bus}', { bus: bus.label })}</span></button>`).join('')}</div>`;
 }
 
 function paintChips() {

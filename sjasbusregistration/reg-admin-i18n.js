@@ -1,7 +1,7 @@
 // SJAS Bus Registration — Arabic strings for the administrator page.
 // Keys are the English text used in reg-admin.js / reg-fleet.js; {placeholders} stay as they are.
 
-import { addStrings } from './reg-i18n.js?v=21';
+import { addStrings } from './reg-i18n.js?v=22';
 
 addStrings({
   // Shell, sign-in, dashboard
