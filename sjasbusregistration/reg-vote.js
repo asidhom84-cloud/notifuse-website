@@ -2,9 +2,9 @@
 // One vote per phone per bus; voting again replaces it. The server unifies similar
 // names. Everyone sees every bus's names and vote counts — never voters or phones.
 
-import { api, esc, local, num, toast } from './reg-common.js?v=20';
-import { getLang, initLang, setLang, t } from './reg-i18n.js?v=20';
-import './reg-vote-i18n.js?v=20';
+import { api, esc, local, num, toast } from './reg-common.js?v=21';
+import { getLang, initLang, setLang, t } from './reg-i18n.js?v=21';
+import './reg-vote-i18n.js?v=21';
 
 const ME_KEY = 'busreg.voter'; // this device only: name + phone, to save retyping
 const app = document.getElementById('rg-app');
@@ -61,7 +61,9 @@ function render() {
       <div class="sj-field"><label for="v-bus">${tt('Bus number')}</label>
         <input id="v-bus" name="bus" maxlength="30" value="${esc(f.bus || '')}" placeholder="${tt('e.g. 37')}" inputmode="text"></div>
       <div class="sj-field"><label for="v-cand">${tt('I vote for')}</label>
-        <input id="v-cand" name="candidate" maxlength="120" value="${esc(f.candidate || '')}" placeholder="${tt('Name')}">
+        <input id="v-cand" name="candidate" maxlength="120" value="${esc(f.candidate || '')}" placeholder="${tt('Name')}"
+          autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" role="combobox" aria-autocomplete="list" aria-controls="v-sugg">
+        <div id="v-sugg" data-sugg role="listbox"></div>
         <div data-chips>${chips(bus)}</div></div>
       <div class="sj-row">
         <div class="sj-field"><label for="v-name">${tt('Your name')}</label><input id="v-name" name="voter" autocomplete="name" maxlength="120" value="${esc(f.name || '')}"></div>
@@ -84,6 +86,19 @@ function render() {
   form.candidate.addEventListener('input', () => {
     const c = busOf(form.bus.value)?.candidates.find((x) => x.id === state.pick);
     if (c && c.name !== form.candidate.value) { state.pick = null; paintChips(); }
+    paintSuggestions();
+  });
+  form.candidate.addEventListener('focus', paintSuggestions);
+  form.candidate.addEventListener('blur', () => setTimeout(() => { const el = app.querySelector('[data-sugg]'); if (el) el.innerHTML = ''; }, 200));
+  app.querySelector('[data-sugg]').addEventListener('mousedown', (e) => e.preventDefault());
+  app.querySelector('[data-sugg]').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-sname]');
+    if (!b) return;
+    form.candidate.value = b.dataset.sname;
+    const here = busOf(form.bus.value)?.candidates.find((x) => x.id === b.dataset.sid);
+    state.pick = here ? here.id : null;
+    app.querySelector('[data-sugg]').innerHTML = '';
+    paintChips();
   });
   app.querySelector('[data-chips]').addEventListener('click', (e) => {
     const b = e.target.closest('[data-pick]');
@@ -103,6 +118,34 @@ function render() {
     form.candidate.focus();
   });
   form.addEventListener('submit', submit);
+}
+
+// Names already voted for: this bus first, then other buses. Matches any word start,
+// Arabic/English spelling-insensitive enough for quick picking.
+const fold = (s) => String(s || '').toLowerCase().normalize('NFKC').replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+  .replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+function paintSuggestions() {
+  const form = app.querySelector('form');
+  const el = app.querySelector('[data-sugg]');
+  if (!form || !el) return;
+  const q = fold(form.candidate.value);
+  const here = busOf(form.bus.value);
+  const seen = new Set();
+  const rows = [];
+  const add = (c, bus, same) => {
+    const k = fold(c.name);
+    if (seen.has(k)) return;
+    const words = k.split(' ');
+    if (q && !words.some((w) => w.startsWith(q.split(' ')[0])) && !k.includes(q)) return;
+    seen.add(k);
+    rows.push({ c, bus, same });
+  };
+  (here?.candidates || []).forEach((c) => add(c, here, true));
+  if (q) (state.info?.buses || []).filter((b) => b !== here).forEach((b) => b.candidates.forEach((c) => add(c, b, false)));
+  if (!rows.length || (!q && !here)) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="sj-card" style="padding:4px;margin-top:4px;max-height:220px;overflow:auto;box-shadow:var(--shadow)">
+    ${rows.slice(0, 8).map(({ c, bus, same }) => `<button type="button" class="sj-linkbtn" data-sname="${esc(c.name)}" data-sid="${esc(c.id)}" style="display:flex;width:100%;justify-content:space-between;gap:8px;padding:8px 10px;text-decoration:none;color:inherit">
+      <bdi>${esc(c.name)}</bdi><span class="sj-small sj-muted">${same ? tt('{n} votes', { n: num(c.votes) }) : tt('Bus {bus}', { bus: bus.label })}</span></button>`).join('')}</div>`;
 }
 
 function paintChips() {
