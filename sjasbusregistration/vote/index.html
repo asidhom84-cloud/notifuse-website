@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>SJAS Bus Registration</title>
-  <meta name="description" content="School bus registration and pickup location." />
+  <title>Vote for a bus leader</title>
+  <meta name="description" content="Vote for the parent who speaks for your bus." />
   <meta name="robots" content="noindex, nofollow, noarchive" />
   <!-- OpenStreetMap services require the site origin (never the full URL) to be sent. -->
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="theme-color" content="#ffffff" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org; connect-src https://onfoclxqgiuzsdsybnyi.supabase.co https://nominatim.openstreetmap.org; base-uri 'self'; form-action 'self'; object-src 'none'" />
-  <meta property="og:title" content="SJAS Bus Registration" />
-  <meta property="og:description" content="School bus registration and pickup location. Password protected." />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://onfoclxqgiuzsdsybnyi.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'" />
+  <meta property="og:title" content="Vote for a bus leader" />
+  <meta property="og:description" content="Vote for the parent who speaks for your bus — SJAS families." />
   <meta property="og:image" content="https://notifamily.net/assets/brand/og-image.png" />
   <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -23,13 +23,12 @@
 <body>
   <header class="sj-topbar">
     <div class="sj-wrap">
-      <a class="sj-brand" href="/sjasbusregistration/" aria-label="SJAS Bus Registration">
+      <a class="sj-brand" href="/sjasbusregistration/vote/" aria-label="Vote for a bus leader">
         <img src="/assets/brand/noti-family-logo.jpg" alt="" width="36" height="36" />
-        <div><b data-i18n="SJAS Bus Registration">SJAS Bus Registration</b><span data-i18n="School bus registration and pickup location">School bus registration and pickup location</span></div>
+        <div><b data-i18n="Vote for a bus leader">Vote for a bus leader</b><span data-i18n="SJAS Bus Registration">SJAS Bus Registration</span></div>
       </a>
       <span class="sj-spacer"></span>
       <button type="button" class="sj-btn sj-btn-sm sj-langbtn" id="rg-lang">العربية</button>
-      <button type="button" class="sj-btn sj-btn-ghost sj-btn-sm" id="rg-signout" data-i18n="Sign out" hidden>Sign out</button>
     </div>
   </header>
 
@@ -40,6 +39,6 @@
   <footer class="sj-foot" data-i18n="Powered by NotiFamily">Powered by NotiFamily</footer>
 
   <noscript><p class="sj-wrap">Please enable JavaScript to use this page.</p></noscript>
-  <script type="module" src="/sjasbusregistration/reg-app.js?v=20"></script>
+  <script type="module" src="/sjasbusregistration/reg-vote.js?v=20"></script>
 </body>
 </html>

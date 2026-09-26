@@ -1,11 +1,11 @@
 // SJAS Bus Registration — admin: fleet, bus assignment, routes, settings, driver sheets.
 
-import { appleMapsUrl, distanceM, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=19';
-import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=19';
-import { hull, PALETTE } from './reg-cluster.js?v=19';
-import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=19';
-import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=19';
-import { t } from './reg-i18n.js?v=19';
+import { appleMapsUrl, distanceM, downloadExcel, esc, fmtDateTime, googleMapsUrl, num, openModal, toast, today } from './reg-common.js?v=20';
+import { addTiles, loadLeaflet, openPicker, pinIcon } from './reg-map.js?v=20';
+import { hull, PALETTE } from './reg-cluster.js?v=20';
+import { autoAssign, suggestAreaBuses, targetSeats } from './reg-assign.js?v=20';
+import { etaOffsets, googleDirectionsLinks, orderStops } from './reg-route.js?v=20';
+import { t } from './reg-i18n.js?v=20';
 
 let ctx = null;          // { call, getRows, openDetail, refreshAll }
 let fleet = null;        // /admin/fleet payload
