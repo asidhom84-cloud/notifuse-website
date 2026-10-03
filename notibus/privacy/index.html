@@ -70,7 +70,7 @@
   <div class="container legal-page">
     <a href="/notibus/" class="legal-back">&larr; NotiBus</a>
     <h1>NotiBus Privacy Policy</h1>
-    <p class="updated">Last updated: August 9, 2026</p>
+    <p class="updated">Last updated: October 3, 2026</p>
 
     <p>This Privacy Policy explains how NotiBus (“we”, “our”, or “us”), a product in the Noti Family, collects, uses, stores, and shares information when you use the NotiBus mobile application and related services. Our website for this product is <a href="https://notifamily.net/notibus/">https://notifamily.net/notibus/</a>.</p>
     <p>NotiBus is separate from the NotiSignal alerts app; NotiSignal has its own <a href="/privacy.html">privacy policy</a>.</p>
@@ -83,7 +83,7 @@
       <li><strong>Rider and guardian information.</strong> Rider profiles (including child riders linked to guardians), guardian links, and stop/pickup details you configure (names, coordinates, optional address notes).</li>
       <li><strong>Trip and route data.</strong> Routes, stops, schedules, route plans, daily trips, staff assignments, trip snapshots, activity timeline entries, and estimated arrival (ETA) records.</li>
       <li><strong>Attendance and absence.</strong> Boarding, drop-off, absence, and correction events, including who recorded them and optional notes or absence reason categories.</li>
-      <li><strong>Precise location (drivers).</strong> When a driver starts trip tracking, NotiBus collects precise GPS data from that device, including while the app is in the background if permission is granted. See Section 3.</li>
+      <li><strong>Precise location and movement data (drivers).</strong> When a driver starts trip tracking, NotiBus collects precise GPS data from that device, including while the app is in the background if permission is granted. Each location point can include latitude and longitude, accuracy, speed, direction of travel, altitude, and a timestamp. NotiBus uses the speed reported by the device&rsquo;s GPS to show the bus&rsquo;s current speed and its average and maximum speed for a trip. See Section 3.</li>
       <li><strong>Device and push data.</strong> Platform (iOS/Android), app version, and Expo push tokens when you enable notifications, plus notification preferences.</li>
       <li><strong>Security and operational logs.</strong> Append-only domain/security audit events and technical logs needed to operate and secure the service (for example membership changes, account deletion requests).</li>
       <li><strong>On-device data.</strong> Session tokens and offline queues stored on your device to keep you signed in and to sync when connectivity returns.</li>
@@ -94,6 +94,7 @@
     <ul>
       <li>Provide authentication, membership, routing, trip operations, attendance, and notifications.</li>
       <li>Share live trip status and ETAs with people authorized on the relevant bus/group/organization.</li>
+      <li>Show authorized parents, guardians and riders the bus&rsquo;s latest recorded location, how recently it was updated, and its current, average and maximum speed for the trip they are linked to (see Section 3).</li>
       <li>Calculate routes and traffic-aware travel times using map providers (see Section 5).</li>
       <li>Maintain an auditable operational history for the buses and organizations you participate in.</li>
       <li>Secure the service, prevent abuse, and comply with legal obligations.</li>
@@ -104,9 +105,11 @@
     <ul>
       <li><strong>When collected.</strong> Precise location is collected from the driver’s device after the driver starts tracking for a trip, and may continue in the background so tracking keeps working while driving. On Android, we show an in-app disclosure before requesting background location permission.</li>
       <li><strong>Why.</strong> To project the bus position for authorized operational use, keep the trip timeline accurate, and compute live arrival estimates to upcoming stops and the destination.</li>
-      <li><strong>Who can see it.</strong> Live tracking session data is available to the driver and to authorized staff on that bus/group (such as owners, admins, drivers, and supervisors), subject to our access controls. Parents/guardians and riders receive trip status and arrival-oriented information according to their permissions; the product is designed around operations and honest ETAs rather than requiring every parent to watch a continuous map.</li>
+      <li><strong>Who can see it.</strong> Live tracking data is available to the driver and to authorized staff on that bus/group (such as owners, admins, drivers, and supervisors), subject to our access controls. Parents, guardians and riders can view the bus&rsquo;s <em>latest recorded</em> location on a map, the time it was last updated, and the current speed plus the average and maximum speed for that trip, but only for a trip on which they (or a rider linked to them) are an expected or excused rider. They cannot see the driver&rsquo;s historical route points or any other bus, trip or organization. Other users, including other parents, cannot view a bus&rsquo;s location unless they are authorized for that bus or trip.</li>
+      <li><strong>Speed information.</strong> Speed is taken from the device&rsquo;s GPS reading. Readings that are missing or implausible are ignored when calculating speeds. Current speed is shown only while the location is recent; average and maximum speed are calculated from the valid readings recorded during the trip&rsquo;s tracking session and are shown to authorized users as summary numbers, not as a speed history.</li>
+      <li><strong>Accuracy and connectivity.</strong> Location, speed and arrival times depend on the driver&rsquo;s device permissions, GPS signal and network connection. They may be delayed, inaccurate or unavailable, and the app shows when the location was last updated. ETAs are estimates.</li>
       <li><strong>Foreground location for stops.</strong> Users may also use foreground location (or map search) when setting pickup/stop locations.</li>
-      <li><strong>Retention.</strong> Historical driver location points older than 14 days are automatically deleted for tracking sessions that are no longer active. Location points belonging to an active tracking session (preparing, tracking, or paused) are not purged by that job. After a trip ends and the session stops, older points become eligible for the 14-day retention purge.</li>
+      <li><strong>Retention.</strong> Historical driver location points (including their speed readings) older than 14 days are automatically deleted for tracking sessions that are no longer active. Location points belonging to an active tracking session (preparing, tracking, or paused) are not purged by that job. After a trip ends and the session stops, older points become eligible for the 14-day retention purge. A summary of the most recent position and speed is kept on the tracking session record as part of the trip record, and is removed if the driver&rsquo;s account is deleted (see Section 7).</li>
       <li><strong>Controls.</strong> Drivers can stop tracking from the Driver Console. You can revoke location permission in system settings at any time.</li>
     </ul>
     <p>We do not use driver location for advertising.</p>
@@ -131,19 +134,19 @@
     <p>These providers process information in accordance with their respective terms and privacy policies and as necessary to provide the services we use.</p>
 
     <h2>6. Sharing within your organization</h2>
-    <p>NotiBus is multi-user by design. People you invite or who share a bus/organization with you may see operational information appropriate to their role (for example manifests, attendance, trip status, and—for authorized staff—live tracking). We do not share your data with unrelated buses or organizations.</p>
+    <p>NotiBus is multi-user by design. People you invite or who share a bus/organization with you may see operational information appropriate to their role (for example manifests, attendance, trip status, and—for authorized staff—live tracking). Parents, guardians and riders linked to a trip may see that trip&rsquo;s status, ETAs, and the bus&rsquo;s latest location and speed statistics as described in Section 3. We do not share your data with unrelated buses or organizations.</p>
 
     <h2>7. Retention and deletion</h2>
     <ul>
-      <li><strong>Account deletion.</strong> You can delete your account in Settings. Deletion removes your login and personal profile. If you are the primary owner of an organization or the primary supervisor of a bus, you must transfer ownership or permanently delete that organization/bus first—NotiBus will not silently destroy organizations or buses that other people rely on.</li>
+      <li><strong>Account deletion.</strong> You can delete your account in Settings. Deleting your account removes your login, profile, memberships and notification settings. Operational records that belong to a bus or organization—such as trip history, attendance records, and rider profiles (including any rider profile created for you)—may be retained by that bus or organization, with your account no longer linked to them. Contact us or your bus or organization administrator to request removal of a rider profile. If you are the primary owner of an organization or the primary supervisor of a bus, you must transfer ownership or permanently delete that organization/bus first—NotiBus will not silently destroy organizations or buses that other people rely on.</li>
       <li><strong>Membership.</strong> Leaving a bus or removing membership does not by itself erase historical trip records for that bus.</li>
       <li><strong>Organization/bus deletion.</strong> Authorized owners may permanently delete an organization or bus (with confirmation), which removes associated operational data for that entity according to our deletion flows.</li>
-      <li><strong>Location history.</strong> As described in Section 3, historical driver location points older than 14 days are purged for non-active sessions.</li>
+      <li><strong>Location history.</strong> As described in Section 3, historical driver location points older than 14 days are purged for non-active sessions. When a driver deletes their account, any active tracking session is stopped, and the tracking sessions and location points recorded from that driver&rsquo;s device are deleted.</li>
     </ul>
 
     <h2>8. Children and school use</h2>
     <p>NotiBus supports transportation involving children, including child Rider profiles managed by authorized parents, guardians, school staff, or other authorized adults. NotiBus user accounts are intended for adults and are not designed for independent use by children.</p>
-    <p>A child Rider profile may contain information necessary to provide transportation services, such as the rider’s name, assigned bus, pickup location, attendance or absence status, and trip-related information.</p>
+    <p>A child Rider profile may contain information necessary to provide transportation services, such as the rider’s name, assigned bus, pickup location, attendance or absence status, and trip-related information. Parents and guardians linked to a child Rider can see that trip&rsquo;s status, estimated arrival times, and the bus&rsquo;s latest location and speed statistics; NotiBus does not track riders&rsquo; or children&rsquo;s own devices; the location shown is the bus driver&rsquo;s.</p>
     <p>Parents, guardians, schools, transportation providers, and other authorized organizations should only provide or manage information about a child when they have appropriate authority and a lawful basis to do so.</p>
     <p>Children are not expected to create accounts, manage transportation groups, or operate NotiBus independently.</p>
     <p>NotiBus does not use children’s information for advertising and does not sell children’s personal information.</p>

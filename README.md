@@ -14,7 +14,8 @@ GitHub Pages allows only **one** custom domain per site. Replacing `CNAME` on `m
 |-----|------|
 | `/` | `index.html` — Noti Family company homepage |
 | `/notisignal/` | `notisignal/index.html` — NotiSignal product page |
-| `/notibus/` | `notibus/index.html` — NotiBus coming soon |
+| `/notibus/` | `notibus/index.html` — NotiBus product page |
+| `/notibus/support/` | NotiBus Support |
 | `/notibus/privacy/` | NotiBus Privacy Policy |
 | `/notibus/terms/` | NotiBus Terms of Service |
 | `/smokelater/` | SmokeLater product/legal landing |
