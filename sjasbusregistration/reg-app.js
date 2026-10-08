@@ -5,10 +5,10 @@
 //               family chose to share them. The server decides the bus from the
 //               PIN-verified session; the page can never ask for another bus.
 
-import { api, ApiError, copyText, esc, fmtDate, local, num, session, toast, tokenFrom } from './reg-common.js?v=23';
-import { registrationForm } from './reg-form.js?v=23';
-import { getLang, initLang, setLang, t } from './reg-i18n.js?v=23';
-import { renderDemandMap, renderMyBusRoute } from './reg-mybus.js?v=23';
+import { api, ApiError, copyText, esc, fmtDate, local, num, session, toast, tokenFrom } from './reg-common.js?v=24';
+import { registrationForm } from './reg-form.js?v=24';
+import { getLang, initLang, setLang, t } from './reg-i18n.js?v=24';
+import { renderDemandMap, renderMyBusRoute } from './reg-mybus.js?v=24';
 
 const VIEWER_KEY = 'busreg.viewer';
 const EDITOR_KEY = 'busreg.editor'; // 45 min, can edit (sessionStorage)
@@ -54,7 +54,8 @@ async function call(path, opts = {}) {
   try {
     return await api(path, { token: viewerToken(), ...opts });
   } catch (err) {
-    if (err instanceof ApiError && err.status === 401 && !opts.token) {
+    // a wrong PIN (/auth/edit) is also a 401, but it is NOT the end of the shared-password session
+    if (err instanceof ApiError && err.status === 401 && !opts.token && path !== '/auth/edit') {
       signOut();
       throw new ApiError(401, t('Your session has ended. Please enter the password again.'));
     }

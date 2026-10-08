@@ -2,9 +2,9 @@
 // Independent copy: nothing here imports from /sjasbus. No secrets live here;
 // every request is authorised server-side by busreg-api.
 
-import { t } from './reg-i18n.js?v=23';
+import { t } from './reg-i18n.js?v=24';
 
-const PROD_API = 'https://onfoclxqgiuzsdsybnyi.supabase.co/functions/v1/busreg-api';
+const PROD_API = 'https://sjas-api.getfastfix.com/busreg-api';
 const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 // Override only on localhost so a crafted link can never point the live page elsewhere.
 export const API = (IS_LOCAL && new URLSearchParams(location.search).get('api')) || PROD_API;

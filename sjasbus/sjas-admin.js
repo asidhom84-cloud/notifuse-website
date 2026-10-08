@@ -2,7 +2,7 @@
 import {
   api, busSheets, downloadExcel, egp, esc, fmtDate, fmtDateTime, num, openLightbox, openModal,
   session, submissionForm, toast, today, tokenFrom,
-} from './sjas-common.js?v=7';
+} from './sjas-common.js?v=8';
 
 const ADMIN_KEY = 'sjas.admin';
 const app = document.getElementById('sj-app');

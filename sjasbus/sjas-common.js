@@ -1,9 +1,9 @@
 // SJAS Bus portal — shared helpers for the parent page and the admin page.
 // No secrets live here: every request is authorised server-side by sjasbus-api.
 
-import { t, tBus, isRtl } from './sjas-i18n.js?v=7';
+import { t, tBus, isRtl } from './sjas-i18n.js?v=8';
 
-const PROD_API = 'https://onfoclxqgiuzsdsybnyi.supabase.co/functions/v1/sjasbus-api';
+const PROD_API = 'https://sjas-api.getfastfix.com/sjasbus-api';
 const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 // An API override is only honoured on localhost so a crafted link can never
 // point the live page at another server.

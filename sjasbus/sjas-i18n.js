@@ -239,6 +239,20 @@ const AR = {
   'At least one payment is required': 'مطلوب دفعة واحدة على الأقل',
   'Each payment needs a valid amount in EGP': 'كل دفعة تحتاج مبلغًا صحيحًا بالجنيه',
   'Contact phone looks invalid': 'رقم الموبايل غير صحيح',
+
+  // Server messages that reach parents/admins (wording to be reviewed by a native speaker)
+  'Please enter your name.': 'من فضلك أدخل اسمك.',
+  'Please explain why this record should be removed.': 'من فضلك اذكر سبب طلب حذف هذا السجل.',
+  'Payment date is invalid': 'تاريخ الدفع غير صالح',
+  'Payment date must be between 2020 and today': 'يجب أن يكون تاريخ الدفع بين 2020 واليوم',
+  'Each payment amount must be between 1 and 9,999,999 EGP': 'يجب أن يكون مبلغ كل دفعة بين 1 و9,999,999 جنيه مصري',
+  'Invalid submission': 'بيانات التسجيل غير صالحة',
+  'Invalid submission data': 'بيانات التسجيل غير صالحة',
+  'Invalid request body': 'الطلب غير صالح',
+  'Incorrect admin password.': 'كلمة مرور المدير غير صحيحة.',
+  'Not found': 'غير موجود',
+  'Nothing to change': 'لا يوجد ما يمكن تغييره',
+  'Invalid status': 'الحالة غير صالحة',
 };
 
 const STORE_KEY = 'sjas.lang';

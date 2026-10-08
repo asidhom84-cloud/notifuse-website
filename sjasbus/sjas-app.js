@@ -2,8 +2,8 @@
 import {
   api, ApiError, busKey, busSheets, copyText, downloadExcel, egp, esc, fmtDate, local, num,
   openLightbox, session, submissionForm, toast, today, tokenFrom,
-} from './sjas-common.js?v=7';
-import { getLang, initLang, setLang, t, tBus } from './sjas-i18n.js?v=7';
+} from './sjas-common.js?v=8';
+import { getLang, initLang, setLang, t, tBus } from './sjas-i18n.js?v=8';
 
 const VIEWER_KEY = 'sjas.viewer';
 const EDITOR_KEY = 'sjas.editor';
@@ -45,7 +45,8 @@ async function call(path, opts = {}) {
   try {
     return await api(path, { token: viewerToken(), ...opts });
   } catch (err) {
-    if (err instanceof ApiError && err.status === 401 && !opts.token) {
+    // a wrong PIN (/auth/edit) is also a 401, but it is NOT the end of the shared-password session
+    if (err instanceof ApiError && err.status === 401 && !opts.token && path !== '/auth/edit') {
       signOut();
       throw new ApiError(401, t('Your session has ended. Please enter the password again.'));
     }

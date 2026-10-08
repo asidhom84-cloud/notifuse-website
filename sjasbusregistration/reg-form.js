@@ -1,8 +1,8 @@
 // SJAS Bus Registration — the registration form (parent create/edit + admin edit).
 
-import { esc, matchArea } from './reg-common.js?v=23';
-import { t } from './reg-i18n.js?v=23';
-import { openPicker, renderPreview } from './reg-map.js?v=23';
+import { esc, matchArea } from './reg-common.js?v=24';
+import { t } from './reg-i18n.js?v=24';
+import { openPicker, renderPreview } from './reg-map.js?v=24';
 
 const NEW_AREA = '__new__';
 
@@ -120,8 +120,8 @@ export function registrationForm(root, opts) {
   $('#f-landmark').value = init.landmark || '';
   $('#f-notes').value = init.pickup_notes || '';
   if (isAdmin) $('#f-admin-notes').value = init.admin_notes || '';
-  // Pickup sharing: ON for new registrations; otherwise the family's saved choice.
-  $('#f-share-pickup').checked = isCreate ? true : init.share_pickup === true;
+  // Every sharing option starts OFF for new registrations; otherwise the family's saved choice.
+  $('#f-share-pickup').checked = init.share_pickup === true;
   $('#f-share-parent').checked = init.share_parent_name === true;
   $('#f-share-students').checked = init.share_student_names === true;
   $('#f-share-phone').checked = init.share_phone === true;

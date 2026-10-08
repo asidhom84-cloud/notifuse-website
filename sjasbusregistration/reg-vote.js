@@ -2,9 +2,9 @@
 // One vote per phone per bus; voting again replaces it. The server unifies similar
 // names. Everyone sees every bus's names and vote counts — never voters or phones.
 
-import { api, esc, local, num, toast } from './reg-common.js?v=23';
-import { getLang, initLang, setLang, t } from './reg-i18n.js?v=23';
-import './reg-vote-i18n.js?v=23';
+import { api, esc, local, num, toast } from './reg-common.js?v=24';
+import { getLang, initLang, setLang, t } from './reg-i18n.js?v=24';
+import './reg-vote-i18n.js?v=24';
 
 const ME_KEY = 'busreg.voter'; // this device only: name + phone, to save retyping
 const app = document.getElementById('rg-app');

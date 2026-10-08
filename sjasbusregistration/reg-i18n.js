@@ -236,6 +236,14 @@ const AR = {
   'Phone number looks invalid': 'رقم الهاتف غير صحيح',
   'At least one student is required': 'مطلوب اسم طالب واحد على الأقل',
   'Area is required': 'المنطقة مطلوبة',
+
+  // Server messages that reach parents/admins (wording to be reviewed by a native speaker)
+  'Invalid registration': 'بيانات التسجيل غير صالحة',
+  'Invalid request body': 'الطلب غير صالح',
+  'Invalid status': 'الحالة غير صالحة',
+  'Between 2 and 90 points are required': 'يلزم ما بين نقطتين و90 نقطة',
+  'Invalid point': 'نقطة غير صالحة',
+  'Enter a name.': 'اكتب اسمًا.',
 };
 
 let storeKey = 'busreg.lang';
